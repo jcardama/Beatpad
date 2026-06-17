@@ -6,7 +6,7 @@ members = ["src-tauri", "crates/engine", "crates/format"]
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0"
-repository = "https://github.com/jcardama/beatpad"
+repository = "https://github.com/jcardama/Beatpad"
 authors = ["jcardama <jcardama@hey.com>"]
 
 [workspace.dependencies]

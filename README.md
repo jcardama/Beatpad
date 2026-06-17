@@ -4,7 +4,7 @@
 
 # BeatPad
 
-[![CI](https://github.com/jcardama/beatpad/actions/workflows/ci.yml/badge.svg)](https://github.com/jcardama/beatpad/actions/workflows/ci.yml)
+[![CI](https://github.com/jcardama/Beatpad/actions/workflows/ci.yml/badge.svg)](https://github.com/jcardama/Beatpad/actions/workflows/ci.yml)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 ![Platform: Windows / macOS / Linux](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-277BB2)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=000)](https://buymeacoffee.com/jcardama)
@@ -51,15 +51,15 @@ A few deliberate choices, so you know what you're getting:
 
 ## Install
 
-Builds will be published on the [Releases](https://github.com/jcardama/beatpad/releases) page. Until then, run from source.
+Builds will be published on the [Releases](https://github.com/jcardama/Beatpad/releases) page. Until then, run from source.
 
 ## Quick Start (from source)
 
 Prerequisites: [Node 20+](https://nodejs.org) with [pnpm](https://pnpm.io), the [Rust toolchain](https://rustup.rs), and the [Tauri v2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. On Debian/Ubuntu that's `libwebkit2gtk-4.1-dev`, `libasound2-dev`, and the usual build tools.
 
 ```bash
-git clone https://github.com/jcardama/beatpad.git
-cd beatpad
+git clone https://github.com/jcardama/Beatpad.git
+cd Beatpad
 pnpm install
 pnpm tauri dev
 ```
