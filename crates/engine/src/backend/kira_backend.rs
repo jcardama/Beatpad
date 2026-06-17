@@ -24,6 +24,11 @@ pub struct KiraTrack {
 
 impl Track for KiraTrack {
     fn trigger(&mut self, _velocity: u8) {
+        // Monophonic per pad: stop any voice still playing (notably a running
+        // loop) before starting a new one, so voices are never orphaned.
+        if let Some(handle) = self.handle.as_mut() {
+            handle.stop(Tween::default());
+        }
         let data = if self.looping {
             self.data.clone().loop_region(0.0..)
         } else {

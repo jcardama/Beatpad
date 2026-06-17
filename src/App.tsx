@@ -1,25 +1,33 @@
+import { useBank } from "@/presenters/useBank";
 import { useKeyboardInput } from "@/presenters/useKeyboardInput";
+import { useLoopEvents } from "@/presenters/useLoopEvents";
+import { useModeControl } from "@/presenters/useModeControl";
 import { usePadGrid } from "@/presenters/usePadGrid";
-import { PadGridView } from "@/views/PadGridView";
+import { BoardView } from "@/views/BoardView";
 
-/** Composition root: wires the pad-grid presenter to the view and keyboard. */
+/** Composition root: wires presenters to the board, keyboard, and engine events. */
 function App() {
   const { pads, press, release } = usePadGrid();
-  useKeyboardInput({ press, release });
+  const { mode, setMode } = useModeControl();
+  const { bank, toggleBank } = useBank();
+  useKeyboardInput({ press, release, bank, toggleBank });
+  useLoopEvents();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background p-8 text-foreground">
-      <header className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Beat<span className="text-primary">Pad</span>
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tap a pad or hit the matching key.
-        </p>
-      </header>
-
-      <div className="w-full max-w-md">
-        <PadGridView pads={pads} onPress={press} onRelease={release} />
+    <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-3">
+      <div
+        className="aspect-square"
+        style={{ width: "min(100vw - 1.5rem, 100vh - 1.5rem)" }}
+      >
+        <BoardView
+          pads={pads}
+          mode={mode}
+          bank={bank}
+          onSetMode={setMode}
+          onToggleBank={toggleBank}
+          onPress={press}
+          onRelease={release}
+        />
       </div>
     </main>
   );

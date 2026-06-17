@@ -13,8 +13,11 @@
     "windows": [
       {
         "title": "BeatPad",
-        "width": 1100,
-        "height": 720
+        "width": 820,
+        "height": 820,
+        "minWidth": 480,
+        "minHeight": 480,
+        "resizable": true
       }
     ],
     "security": {

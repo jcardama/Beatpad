@@ -1,6 +1,12 @@
 import { useCallback } from "react";
 
-import { PAD_LABELS, type PadId } from "@/model/domain/pad";
+import {
+  PAD_COUNT,
+  padBank,
+  padLabel,
+  type Bank,
+  type PadId,
+} from "@/model/domain/pad";
 import { releasePad, triggerPad } from "@/model/ipc/commands";
 import { useTransportStore } from "@/model/store/transportStore";
 
@@ -8,7 +14,9 @@ import { useTransportStore } from "@/model/store/transportStore";
 export interface PadVm {
   id: PadId;
   label: string;
+  bank: Bank;
   lit: boolean;
+  looping: boolean;
 }
 
 /**
@@ -18,6 +26,7 @@ export interface PadVm {
  */
 export function usePadGrid() {
   const lit = useTransportStore((s) => s.lit);
+  const looping = useTransportStore((s) => s.looping);
   const setLit = useTransportStore((s) => s.setLit);
 
   const press = useCallback(
@@ -36,10 +45,12 @@ export function usePadGrid() {
     [setLit],
   );
 
-  const pads: PadVm[] = PAD_LABELS.map((label, id) => ({
+  const pads: PadVm[] = Array.from({ length: PAD_COUNT }, (_, id) => ({
     id,
-    label,
+    label: padLabel(id),
+    bank: padBank(id),
     lit: lit[id] ?? false,
+    looping: looping[id] ?? false,
   }));
 
   return { pads, press, release };

@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 
-import { KEY_TO_PAD, type PadId } from "@/model/domain/pad";
+import { keyToPad, TAB_KEY, type Bank, type PadId } from "@/model/domain/pad";
 
 interface Handlers {
   press: (pad: PadId) => void;
   release: (pad: PadId) => void;
+  bank: Bank;
+  toggleBank: () => void;
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -16,24 +18,30 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Binds the keyboard to the pad grid. Keys on `event.code` (layout-independent),
- * ignores autorepeat, skips editable/IME targets, and releases any held pads on
- * window blur so a pad never sticks when focus is lost mid-press.
+ * Binds the keyboard to the active grid bank. Keys resolve via `event.code`
+ * (layout-independent), autorepeat is ignored, editable targets are skipped,
+ * and TAB flips banks. Any held pads are released on bank switch, window blur,
+ * or unmount so a pad never sticks.
  */
-export function useKeyboardInput({ press, release }: Handlers): void {
+export function useKeyboardInput({ press, release, bank, toggleBank }: Handlers): void {
   useEffect(() => {
     const held = new Set<PadId>();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === TAB_KEY) {
+        event.preventDefault(); // don't let TAB move focus
+        toggleBank();
+        return;
+      }
       if (event.repeat || isEditableTarget(event.target)) return;
-      const pad = KEY_TO_PAD[event.code];
+      const pad = keyToPad(event.code, bank);
       if (pad === undefined || held.has(pad)) return;
       held.add(pad);
       press(pad);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const pad = KEY_TO_PAD[event.code];
+      const pad = keyToPad(event.code, bank);
       if (pad === undefined) return;
       held.delete(pad);
       release(pad);
@@ -48,9 +56,10 @@ export function useKeyboardInput({ press, release }: Handlers): void {
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", onBlur);
     return () => {
+      held.forEach(release); // release everything held in this bank before switching
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [press, release]);
+  }, [press, release, bank, toggleBank]);
 }
