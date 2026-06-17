@@ -1,8 +1,17 @@
 use engine::{PadId, Phase, PlayMode};
+use serde::Serialize;
 use tauri::State;
 
 use crate::input::pad_event;
-use crate::state::{AppState, AudioCmd};
+use crate::state::{AppState, AudioCmd, PackEntry, PAD_COUNT};
+
+/// What a `.beat` pack filled: a pad plus the mode the pack assigned it, so the
+/// UI can reflect per-pad modes after loading.
+#[derive(Serialize)]
+pub struct LoadedPad {
+    pad: u16,
+    mode: String,
+}
 
 /// Fixed velocity for keyboard input (the computer keyboard has no velocity
 /// sensing). MIDI input will supply real velocities later.
@@ -24,10 +33,72 @@ pub fn release_pad(pad: u16, state: State<AppState>) {
 
 #[tauri::command]
 pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
-    let mode = match mode.as_str() {
+    state.send(AudioCmd::SetMode(PadId(pad), parse_mode(&mode)));
+}
+
+/// Load (or replace) the sound on a single pad from a file on disk.
+#[tauri::command]
+pub fn load_pad_sound(pad: u16, path: String, state: State<AppState>) -> Result<(), String> {
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    state.send(AudioCmd::LoadSound(PadId(pad), bytes));
+    Ok(())
+}
+
+/// Load a `.beat` pack, replacing the board. Returns each filled pad + its mode.
+#[tauri::command]
+pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<LoadedPad>, String> {
+    let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+    let beat = format::read_beat(file).map_err(|e| e.to_string())?;
+
+    let mut entries = Vec::new();
+    let mut loaded = Vec::new();
+    for mapping in &beat.manifest.pads {
+        if mapping.pad >= PAD_COUNT {
+            continue; // pack addresses a pad outside our grid
+        }
+        if let Some(bytes) = beat.samples.get(&mapping.sample) {
+            entries.push(PackEntry {
+                pad: PadId(mapping.pad),
+                bytes: bytes.clone(),
+                mode: from_format_mode(mapping.mode),
+            });
+            loaded.push(LoadedPad {
+                pad: mapping.pad,
+                mode: format_mode_str(mapping.mode).to_string(),
+            });
+        }
+    }
+
+    state.send(AudioCmd::LoadPack(entries));
+    Ok(loaded)
+}
+
+/// Remove the sound from a single pad.
+#[tauri::command]
+pub fn clear_pad(pad: u16, state: State<AppState>) {
+    state.send(AudioCmd::Clear(PadId(pad)));
+}
+
+fn parse_mode(mode: &str) -> PlayMode {
+    match mode {
         "hold_loop" => PlayMode::HoldLoop,
         "toggle_loop" => PlayMode::ToggleLoop,
         _ => PlayMode::OneShot,
-    };
-    state.send(AudioCmd::SetMode(PadId(pad), mode));
+    }
+}
+
+fn from_format_mode(mode: format::PadMode) -> PlayMode {
+    match mode {
+        format::PadMode::HoldLoop => PlayMode::HoldLoop,
+        format::PadMode::ToggleLoop => PlayMode::ToggleLoop,
+        format::PadMode::OneShot => PlayMode::OneShot,
+    }
+}
+
+fn format_mode_str(mode: format::PadMode) -> &'static str {
+    match mode {
+        format::PadMode::OneShot => "one_shot",
+        format::PadMode::HoldLoop => "hold_loop",
+        format::PadMode::ToggleLoop => "toggle_loop",
+    }
 }

@@ -24,6 +24,10 @@ impl std::error::Error for BackendError {}
 /// drives pads through this trait and never touches kira types directly.
 pub trait Backend {
     fn register_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError>;
+    /// Remove a pad's sample (stopping it if playing).
+    fn clear(&mut self, pad: PadId);
+    /// Whether the pad currently has a sample loaded.
+    fn is_loaded(&self, pad: PadId) -> bool;
     fn play(&mut self, pad: PadId, velocity: u8);
     fn stop(&mut self, pad: PadId);
     fn set_looping(&mut self, pad: PadId, looping: bool);

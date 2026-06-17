@@ -14,13 +14,20 @@ interface TransportState {
   lit: boolean[];
   /** Per-pad looping state (authoritative, from the engine's `loop-changed`). */
   looping: boolean[];
-  /** Global play mode applied to every pad. */
-  mode: PadMode;
+  /** Per-pad loaded state (authoritative, from the engine's `sound-changed`). */
+  loaded: boolean[];
+  /** Per-pad play mode. */
+  modes: PadMode[];
   /** Which half of the grid the keyboard currently addresses. */
   bank: Bank;
   setLit: (pad: PadId, on: boolean) => void;
   setLooping: (pad: PadId, on: boolean) => void;
-  setMode: (mode: PadMode) => void;
+  setLoaded: (pad: PadId, on: boolean) => void;
+  setMode: (pad: PadId, mode: PadMode) => void;
+  /** Bulk-set modes (e.g. after loading a pack). */
+  setModes: (entries: { pad: PadId; mode: PadMode }[]) => void;
+  /** Reset every pad to the default mode (e.g. before loading a pack). */
+  resetModes: () => void;
   setBank: (bank: Bank) => void;
   toggleBank: () => void;
 }
@@ -30,7 +37,8 @@ interface TransportState {
 export const useTransportStore = create<TransportState>((set) => ({
   lit: Array<boolean>(PAD_COUNT).fill(false),
   looping: Array<boolean>(PAD_COUNT).fill(false),
-  mode: DEFAULT_MODE,
+  loaded: Array<boolean>(PAD_COUNT).fill(false),
+  modes: Array<PadMode>(PAD_COUNT).fill(DEFAULT_MODE),
   bank: DEFAULT_BANK,
   setLit: (pad, on) =>
     set((state) => {
@@ -44,7 +52,25 @@ export const useTransportStore = create<TransportState>((set) => ({
       looping[pad] = on;
       return { looping };
     }),
-  setMode: (mode) => set({ mode }),
+  setLoaded: (pad, on) =>
+    set((state) => {
+      const loaded = state.loaded.slice();
+      loaded[pad] = on;
+      return { loaded };
+    }),
+  setMode: (pad, mode) =>
+    set((state) => {
+      const modes = state.modes.slice();
+      modes[pad] = mode;
+      return { modes };
+    }),
+  setModes: (entries) =>
+    set((state) => {
+      const modes = state.modes.slice();
+      for (const { pad, mode } of entries) modes[pad] = mode;
+      return { modes };
+    }),
+  resetModes: () => set({ modes: Array<PadMode>(PAD_COUNT).fill(DEFAULT_MODE) }),
   setBank: (bank) => set({ bank }),
   toggleBank: () => set((state) => ({ bank: state.bank === "top" ? "bottom" : "top" })),
 }));

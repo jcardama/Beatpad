@@ -6,6 +6,7 @@ import {
   padLabel,
   type Bank,
   type PadId,
+  type PadMode,
 } from "@/model/domain/pad";
 import { releasePad, triggerPad } from "@/model/ipc/commands";
 import { useTransportStore } from "@/model/store/transportStore";
@@ -17,6 +18,8 @@ export interface PadVm {
   bank: Bank;
   lit: boolean;
   looping: boolean;
+  loaded: boolean;
+  mode: PadMode;
 }
 
 /**
@@ -27,6 +30,8 @@ export interface PadVm {
 export function usePadGrid() {
   const lit = useTransportStore((s) => s.lit);
   const looping = useTransportStore((s) => s.looping);
+  const loaded = useTransportStore((s) => s.loaded);
+  const modes = useTransportStore((s) => s.modes);
   const setLit = useTransportStore((s) => s.setLit);
 
   const press = useCallback(
@@ -51,6 +56,8 @@ export function usePadGrid() {
     bank: padBank(id),
     lit: lit[id] ?? false,
     looping: looping[id] ?? false,
+    loaded: loaded[id] ?? false,
+    mode: modes[id] ?? "one_shot",
   }));
 
   return { pads, press, release };

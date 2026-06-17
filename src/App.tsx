@@ -1,17 +1,19 @@
 import { useBank } from "@/presenters/useBank";
 import { useKeyboardInput } from "@/presenters/useKeyboardInput";
 import { useLoopEvents } from "@/presenters/useLoopEvents";
-import { useModeControl } from "@/presenters/useModeControl";
+import { usePadActions } from "@/presenters/usePadActions";
 import { usePadGrid } from "@/presenters/usePadGrid";
+import { useSoundEvents } from "@/presenters/useSoundEvents";
 import { BoardView } from "@/views/BoardView";
 
 /** Composition root: wires presenters to the board, keyboard, and engine events. */
 function App() {
   const { pads, press, release } = usePadGrid();
-  const { mode, setMode } = useModeControl();
   const { bank, toggleBank } = useBank();
+  const { setMode, assignSound, clearSound, loadPack } = usePadActions();
   useKeyboardInput({ press, release, bank, toggleBank });
   useLoopEvents();
+  useSoundEvents();
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-3">
@@ -21,12 +23,14 @@ function App() {
       >
         <BoardView
           pads={pads}
-          mode={mode}
           bank={bank}
-          onSetMode={setMode}
           onToggleBank={toggleBank}
           onPress={press}
           onRelease={release}
+          onSetMode={setMode}
+          onAssign={assignSound}
+          onClear={clearSound}
+          onLoadPack={loadPack}
         />
       </div>
     </main>

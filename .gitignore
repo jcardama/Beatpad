@@ -19,6 +19,9 @@ dist-ssr
 # Generated icon source (regenerate via scripts/rasterize-logo.mjs)
 assets/logo-1024.png
 
+# Beat packs are user data / test artifacts, not source
+*.beat
+
 # Local agent context (private — not committed)
 CLAUDE.md
 CLAUDE.local.md

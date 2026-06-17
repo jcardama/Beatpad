@@ -27,4 +27,5 @@ engine = { path = "../crates/engine" }
 format = { path = "../crates/format" }
 tauri-plugin-log = "2"
 tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
 

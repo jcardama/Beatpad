@@ -87,6 +87,16 @@ impl Backend for KiraBackend {
         Ok(())
     }
 
+    fn clear(&mut self, pad: PadId) {
+        if let Some(mut track) = self.tracks.remove(&pad) {
+            track.release(); // stop any voice before dropping the track
+        }
+    }
+
+    fn is_loaded(&self, pad: PadId) -> bool {
+        self.tracks.contains_key(&pad)
+    }
+
     fn play(&mut self, pad: PadId, velocity: u8) {
         if let Some(track) = self.tracks.get_mut(&pad) {
             track.trigger(velocity);

@@ -1,55 +1,46 @@
 import type { ReactNode } from "react";
-import { Circle, Hand, Repeat } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 
-import {
-  GRID,
-  PAD_MODES,
-  type Bank,
-  type PadId,
-  type PadMode,
-} from "@/model/domain/pad";
+import { GRID, type Bank, type PadId, type PadMode } from "@/model/domain/pad";
 import type { PadVm } from "@/presenters/usePadGrid";
 import { BankToggle } from "./BankToggle";
 import { ControlCell } from "./ControlCell";
 import { PadView } from "./PadView";
 
-// One control lane on top (bank + logo) and one on the right (modes). Beats sit
-// flush in the lower-left, so there is no empty left column or bottom row.
+// One control lane on top (bank + load + logo). Beats sit flush in the lower
+// area; per-pad mode/sound live in each pad's right-click menu.
 const COLS = GRID.cols + 1; // 9: beats + right lane
 const ROWS = GRID.rows + 1; // 9: top lane + beats
-const RIGHT_LANE = COLS - 1; // x of the mode column
-const BOTTOM_ROW = ROWS - 1; // y of the bottom beat row
-
-const MODE_ICON: Record<PadMode, typeof Circle> = {
-  one_shot: Circle,
-  hold_loop: Hand,
-  toggle_loop: Repeat,
-};
+const RIGHT_LANE = COLS - 1;
 
 interface Props {
   pads: PadVm[];
-  mode: PadMode;
   bank: Bank;
-  onSetMode: (mode: PadMode) => void;
   onToggleBank: () => void;
   onPress: (pad: PadId) => void;
   onRelease: (pad: PadId) => void;
+  onSetMode: (pad: PadId, mode: PadMode) => void;
+  onAssign: (pad: PadId) => void;
+  onClear: (pad: PadId) => void;
+  onLoadPack: () => void;
 }
 
 /**
  * The whole instrument as one cohesive square grid: an 8×8 beat field with a top
- * lane (bank selector at the left, logo at the right) and a right lane (modes,
- * anchored at the bottom and growing up). Middle cells of each lane are reserved
- * (empty) for future controls.
+ * lane holding the bank toggle, a load-pack button, and the logo. The right
+ * column is reserved (empty) for future controls. Each pad's mode and sound are
+ * set from its right-click menu.
  */
 export function BoardView({
   pads,
-  mode,
   bank,
-  onSetMode,
   onToggleBank,
   onPress,
   onRelease,
+  onSetMode,
+  onAssign,
+  onClear,
+  onLoadPack,
 }: Props) {
   const cells: ReactNode[] = [];
 
@@ -65,6 +56,9 @@ export function BoardView({
             active={pad.bank === bank}
             onPress={onPress}
             onRelease={onRelease}
+            onSetMode={onSetMode}
+            onAssign={onAssign}
+            onClear={onClear}
           />,
         );
         continue;
@@ -86,19 +80,16 @@ export function BoardView({
         continue;
       }
 
-      // Mode buttons: right lane, anchored at the bottom beat row, growing up.
-      const modeIndex = BOTTOM_ROW - r;
-      if (c === RIGHT_LANE && modeIndex >= 0 && modeIndex < PAD_MODES.length) {
-        const m = PAD_MODES[modeIndex];
-        const Icon = MODE_ICON[m.id];
+      // Load a .beat pack: top lane, next to the bank toggle.
+      if (r === 0 && c === 1) {
         cells.push(
           <ControlCell
-            key={`m${m.id}`}
-            active={mode === m.id}
-            title={m.label}
-            onClick={() => onSetMode(m.id)}
+            key="loadpack"
+            active={false}
+            title="Load a .beat pack"
+            onClick={onLoadPack}
           >
-            <Icon className="size-[45%]" />
+            <FolderOpen className="size-[45%]" />
           </ControlCell>,
         );
         continue;

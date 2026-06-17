@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::backend::Backend;
+use crate::backend::{Backend, BackendError};
 use crate::event::{PadEvent, PadId, Phase};
 use crate::mode::PlayMode;
 
@@ -28,6 +28,28 @@ impl<B: Backend> Engine<B> {
 
     fn mode(&self, pad: PadId) -> PlayMode {
         self.modes.get(&pad).copied().unwrap_or_default()
+    }
+
+    /// Load (or replace) a pad's sample. Stops any loop on that pad first so a
+    /// replaced sample never leaves an orphaned voice playing.
+    pub fn load_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError> {
+        if self.looping.remove(&pad) {
+            self.backend.stop(pad);
+        }
+        self.backend.register_sample(pad, bytes)
+    }
+
+    /// Remove a pad's sample, stopping any loop on it.
+    pub fn clear(&mut self, pad: PadId) {
+        if self.looping.remove(&pad) {
+            self.backend.stop(pad);
+        }
+        self.backend.clear(pad);
+    }
+
+    /// Whether the pad has a sample loaded.
+    pub fn is_loaded(&self, pad: PadId) -> bool {
+        self.backend.is_loaded(pad)
     }
 
     /// Whether the pad is currently looping (held-loop active or toggle-loop on).
@@ -92,6 +114,12 @@ mod tests {
     impl Backend for MockBackend {
         fn register_sample(&mut self, _pad: PadId, _bytes: Vec<u8>) -> Result<(), BackendError> {
             Ok(())
+        }
+        fn clear(&mut self, pad: PadId) {
+            self.calls.push(format!("clear {}", pad.0));
+        }
+        fn is_loaded(&self, _pad: PadId) -> bool {
+            false
         }
         fn play(&mut self, pad: PadId, _velocity: u8) {
             self.calls.push(format!("play {}", pad.0));

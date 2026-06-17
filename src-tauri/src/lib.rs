@@ -8,21 +8,18 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(tauri_plugin_log::log::LevelFilter::Info)
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::Stdout,
-                ))
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::LogDir {
+                .targets([
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                         file_name: Some("beatpad".into()),
-                    },
-                ))
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::Webview,
-                ))
+                    }),
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+                ])
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
@@ -34,7 +31,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::trigger_pad,
             commands::release_pad,
-            commands::set_pad_mode
+            commands::set_pad_mode,
+            commands::load_pad_sound,
+            commands::load_beat_pack,
+            commands::clear_pad
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
