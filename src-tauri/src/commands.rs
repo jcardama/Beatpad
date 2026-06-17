@@ -79,6 +79,17 @@ pub fn clear_pad(pad: u16, state: State<AppState>) {
     state.send(AudioCmd::Clear(PadId(pad)));
 }
 
+/// Show/hide the native menu bar (bound to Alt; the bar is hidden by default).
+#[tauri::command]
+pub fn toggle_menu(window: tauri::WebviewWindow) {
+    let visible = window.is_menu_visible().unwrap_or(false);
+    let _ = if visible {
+        window.hide_menu()
+    } else {
+        window.show_menu()
+    };
+}
+
 fn parse_mode(mode: &str) -> PlayMode {
     match mode {
         "hold_loop" => PlayMode::HoldLoop,

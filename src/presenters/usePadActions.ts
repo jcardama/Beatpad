@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 
-import type { PadId, PadMode } from "@/model/domain/pad";
+import { PAD_COUNT, type PadId, type PadMode } from "@/model/domain/pad";
 import {
   clearPad,
   loadBeatPack,
@@ -15,7 +15,7 @@ import { useTransportStore } from "@/model/store/transportStore";
  * change or clear its sound, and load a whole `.beat` pack.
  */
 export function usePadActions() {
-  const storeSetMode = useTransportStore((s) => s.setMode);
+  const storeSetMode = useTransportStore((s) => s.setPadMode);
   const setModes = useTransportStore((s) => s.setModes);
   const resetModes = useTransportStore((s) => s.resetModes);
 
@@ -52,6 +52,11 @@ export function usePadActions() {
     void clearPad(pad);
   }, []);
 
+  const clearBoard = useCallback(() => {
+    for (let pad = 0; pad < PAD_COUNT; pad++) void clearPad(pad);
+    resetModes();
+  }, [resetModes]);
+
   const loadPack = useCallback(
     () =>
       withDialog(async () => {
@@ -64,5 +69,5 @@ export function usePadActions() {
     [withDialog, resetModes, setModes],
   );
 
-  return { setMode, assignSound, clearSound, loadPack };
+  return { setMode, assignSound, clearSound, clearBoard, loadPack };
 }

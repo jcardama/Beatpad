@@ -17,10 +17,11 @@ export function ControlCell({ active, title, onClick, children }: Props) {
       title={title}
       onClick={onClick}
       className={cn(
-        "flex select-none items-center justify-center rounded-[14%] border transition-colors",
+        "flex aspect-square select-none items-center justify-center place-self-center rounded-full border transition-colors",
+        "size-[78%]",
         active
           ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-muted/40 text-muted-foreground hover:text-foreground",
+          : "border-border bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
       )}
     >
       {children}

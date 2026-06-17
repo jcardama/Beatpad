@@ -52,15 +52,15 @@ export function PadView({
           onPointerUp={release}
           onPointerLeave={release}
           className={cn(
-            "flex select-none items-center justify-center rounded-[14%] border text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
+            "flex select-none items-center justify-center rounded-[16%] border text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
             empty
-              ? "border-dashed border-border/60 bg-transparent text-muted-foreground/40"
-              : "border-border bg-card text-muted-foreground",
-            !empty && !active && "opacity-55",
-            !empty && pad.looping && "animate-pulse ring-2 ring-primary",
+              ? "border border-dashed border-border bg-transparent text-muted-foreground/40"
+              : "border-primary/25 bg-gradient-to-br from-primary/35 to-primary/10 text-foreground/80",
+            !empty && !active && "opacity-45",
+            !empty && pad.looping && "ring-2 ring-primary animate-pulse",
             !empty &&
               pad.lit &&
-              "scale-95 border-primary bg-primary text-primary-foreground shadow-lg",
+              "scale-95 border-primary bg-primary bg-none text-primary-foreground shadow-lg shadow-primary/30",
           )}
         >
           {pad.label}

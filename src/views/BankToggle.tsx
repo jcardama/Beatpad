@@ -16,7 +16,7 @@ export function BankToggle({ bank, onToggle }: Props) {
       type="button"
       title={`${bank === "top" ? "Top" : "Bottom"} half active — Tab to switch`}
       onClick={onToggle}
-      className="flex select-none items-center justify-center rounded-[14%] border border-border bg-muted/40 text-muted-foreground transition-colors hover:text-foreground"
+      className="flex aspect-square size-[78%] select-none items-center justify-center place-self-center rounded-full border border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
     >
       <BankIcon bank={bank} />
     </button>

@@ -18,13 +18,17 @@ interface TransportState {
   loaded: boolean[];
   /** Per-pad play mode. */
   modes: PadMode[];
+  /** The global mode selector's current value (last bulk-applied mode). */
+  globalMode: PadMode;
   /** Which half of the grid the keyboard currently addresses. */
   bank: Bank;
   setLit: (pad: PadId, on: boolean) => void;
   setLooping: (pad: PadId, on: boolean) => void;
   setLoaded: (pad: PadId, on: boolean) => void;
-  setMode: (pad: PadId, mode: PadMode) => void;
-  /** Bulk-set modes (e.g. after loading a pack). */
+  setPadMode: (pad: PadId, mode: PadMode) => void;
+  /** Apply one mode to every pad (the global selector). */
+  setGlobalMode: (mode: PadMode) => void;
+  /** Bulk-set per-pad modes (e.g. after loading a pack). */
   setModes: (entries: { pad: PadId; mode: PadMode }[]) => void;
   /** Reset every pad to the default mode (e.g. before loading a pack). */
   resetModes: () => void;
@@ -39,6 +43,7 @@ export const useTransportStore = create<TransportState>((set) => ({
   looping: Array<boolean>(PAD_COUNT).fill(false),
   loaded: Array<boolean>(PAD_COUNT).fill(false),
   modes: Array<PadMode>(PAD_COUNT).fill(DEFAULT_MODE),
+  globalMode: DEFAULT_MODE,
   bank: DEFAULT_BANK,
   setLit: (pad, on) =>
     set((state) => {
@@ -58,12 +63,14 @@ export const useTransportStore = create<TransportState>((set) => ({
       loaded[pad] = on;
       return { loaded };
     }),
-  setMode: (pad, mode) =>
+  setPadMode: (pad, mode) =>
     set((state) => {
       const modes = state.modes.slice();
       modes[pad] = mode;
       return { modes };
     }),
+  setGlobalMode: (mode) =>
+    set({ globalMode: mode, modes: Array<PadMode>(PAD_COUNT).fill(mode) }),
   setModes: (entries) =>
     set((state) => {
       const modes = state.modes.slice();

@@ -1,4 +1,9 @@
-import { open } from "@tauri-apps/plugin-dialog";
+import { message, open } from "@tauri-apps/plugin-dialog";
+
+/** Placeholder for not-yet-built features reached from the menu. */
+export const showComingSoon = async (what: string): Promise<void> => {
+  await message(`${what} is coming soon.`, { title: "BeatPad", kind: "info" });
+};
 
 /** Native file picker for a single audio sample. Returns the path, or null. */
 export async function pickSoundFile(): Promise<string | null> {

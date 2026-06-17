@@ -1,4 +1,5 @@
 import type { PadId, PadMode } from "@/model/domain/pad";
+import type { Theme } from "@/model/domain/theme";
 import { ipc } from "./client";
 
 /** Typed wrappers over the Rust `#[tauri::command]`s. */
@@ -29,6 +30,13 @@ export const loadBeatPack = (path: string): Promise<LoadedPad[]> =>
 export const clearPad = (pad: PadId): Promise<void> =>
   ipc.invoke("clear_pad", { pad });
 
+/** Show/hide the native menu bar (Alt toggle). */
+export const toggleMenu = (): Promise<void> => ipc.invoke("toggle_menu");
+
+/** Enable/disable the board-dependent menu items (File → Close, Edit → Clear). */
+export const setBoardEnabled = (enabled: boolean): Promise<void> =>
+  ipc.invoke("set_board_enabled", { enabled });
+
 /** Payload of the `loop-changed` event the engine emits when a pad loops/stops. */
 export interface LoopChanged {
   pad: PadId;
@@ -46,3 +54,16 @@ export interface SoundChanged {
 
 export const onSoundChanged = (handler: (e: SoundChanged) => void) =>
   ipc.listen<SoundChanged>("sound-changed", handler);
+
+/** Native menu events. */
+export const onMenuOpenPack = (handler: () => void) =>
+  ipc.listen<null>("menu:open-pack", () => handler());
+
+export const onMenuClearBoard = (handler: () => void) =>
+  ipc.listen<null>("menu:clear-board", () => handler());
+
+export const onMenuPreferences = (handler: () => void) =>
+  ipc.listen<null>("menu:preferences", () => handler());
+
+export const onMenuTheme = (handler: (theme: Theme) => void) =>
+  ipc.listen<Theme>("menu:theme", handler);
