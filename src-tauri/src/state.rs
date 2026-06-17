@@ -40,15 +40,15 @@ impl AppState {
             let mut backend = match KiraBackend::new() {
                 Ok(backend) => backend,
                 Err(e) => {
-                    eprintln!("[audio] init failed: {e}");
+                    log::error!("audio init failed: {e}");
                     return;
                 }
             };
-            println!("[audio] output: {}", backend.device_label());
+            log::info!("audio output: {}", backend.device_label());
 
             for pad in 0..PAD_COUNT {
                 if let Err(e) = backend.register_sample(PadId(pad), PAD_SAMPLE.to_vec()) {
-                    eprintln!("[audio] register pad {pad} failed: {e}");
+                    log::error!("register pad {pad} failed: {e}");
                 }
             }
 
