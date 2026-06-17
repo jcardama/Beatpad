@@ -1,0 +1,37 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Rust workspace build output (Cargo.lock is committed for the app)
+/target
+**/*.rs.bk
+
+# Generated icon source (regenerate via scripts/rasterize-logo.mjs)
+assets/logo-1024.png
+
+# Local agent context (private — not committed)
+CLAUDE.md
+CLAUDE.local.md
+/agent_docs/
+.claude/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
