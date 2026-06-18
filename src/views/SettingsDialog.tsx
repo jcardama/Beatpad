@@ -61,16 +61,16 @@ export function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] gap-6 overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t((m) => m.settings.title)}</DialogTitle>
+          <DialogTitle className="type-title">
+            {t((m) => m.settings.title)}
+          </DialogTitle>
           <DialogDescription className="sr-only">
             {t((m) => m.settings.description)}
           </DialogDescription>
         </DialogHeader>
 
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold">
-            {t((m) => m.settings.appearance)}
-          </h3>
+          <h3 className="type-heading">{t((m) => m.settings.appearance)}</h3>
           <SegmentedToggle
             label={t((m) => m.settings.theme)}
             options={themeOptions}
@@ -87,9 +87,7 @@ export function SettingsDialog({
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">
-              {t((m) => m.settings.keybindings)}
-            </h3>
+            <h3 className="type-heading">{t((m) => m.settings.keybindings)}</h3>
             <button
               type="button"
               onClick={onResetKeybindings}
