@@ -18,9 +18,9 @@ const AUTO_DISMISS: Record<ToastVariant, number | null> = {
 };
 
 const ACCENT: Record<ToastVariant, string> = {
-  info: "border-l-foreground/30",
-  error: "border-l-destructive",
-  update: "border-l-primary",
+  info: "bg-foreground/30",
+  error: "bg-destructive",
+  update: "bg-primary",
 };
 
 /** Stacked in-app notifications, bottom-right. */
@@ -52,32 +52,34 @@ function ToastItem({ toast }: { toast: Toast }) {
   return (
     <div
       role="status"
-      className={cn(
-        "pointer-events-auto flex items-start gap-3 rounded-lg border border-l-4 bg-popover px-3 py-2.5 text-sm text-popover-foreground shadow-lg",
-        ACCENT[toast.variant],
-      )}
+      className="pointer-events-auto flex overflow-hidden rounded-lg border bg-popover text-sm text-popover-foreground shadow-lg"
     >
-      <p className="flex-1 whitespace-pre-line">{toast.message}</p>
-      {toast.action && (
+      {/* Accent bar: clipped by the container's rounding, so it rounds only on
+          the outer (far-left) edge and stays flat where it meets the body. */}
+      <span className={cn("w-1 shrink-0", ACCENT[toast.variant])} />
+      <div className="flex flex-1 items-start gap-3 px-3 py-2.5">
+        <p className="flex-1 whitespace-pre-line">{toast.message}</p>
+        {toast.action && (
+          <button
+            type="button"
+            onClick={() => {
+              toast.action?.onClick();
+              dismiss(toast.id);
+            }}
+            className="font-medium text-primary hover:underline"
+          >
+            {toast.action.label}
+          </button>
+        )}
         <button
           type="button"
-          onClick={() => {
-            toast.action?.onClick();
-            dismiss(toast.id);
-          }}
-          className="font-medium text-primary hover:underline"
+          aria-label={t((m) => m.toast.dismiss)}
+          onClick={() => dismiss(toast.id)}
+          className="text-muted-foreground hover:text-foreground"
         >
-          {toast.action.label}
+          <X className="size-4" />
         </button>
-      )}
-      <button
-        type="button"
-        aria-label={t((m) => m.toast.dismiss)}
-        onClick={() => dismiss(toast.id)}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <X className="size-4" />
-      </button>
+      </div>
     </div>
   );
 }
