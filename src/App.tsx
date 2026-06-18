@@ -15,6 +15,7 @@ import { useSettings } from "@/presenters/useSettings";
 import { useSoundErrorEvents } from "@/presenters/useSoundErrorEvents";
 import { useSoundEvents } from "@/presenters/useSoundEvents";
 import { useTheme } from "@/presenters/useTheme";
+import { useUpdateCheck } from "@/presenters/useUpdateCheck";
 import { BoardView } from "@/views/BoardView";
 import { SettingsDialog } from "@/views/SettingsDialog";
 
@@ -38,6 +39,7 @@ function App() {
   useMenuEvents({ onOpenPack: loadPack, onClearBoard: clearBoard });
   useMenuToggle();
   useBoardMenuSync();
+  useUpdateCheck();
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-3">

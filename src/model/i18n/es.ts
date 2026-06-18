@@ -67,4 +67,11 @@ export const es: Messages = {
     soundLoadFailed: (pad, error) =>
       `Pad ${pad}: no se pudo reproducir ese sonido.\n${error}`,
   },
+  update: {
+    available: (version) =>
+      `BeatPad v${version} ya está disponible. ¿Abrir la página de descargas?`,
+    upToDate: (version) => `Tienes la última versión (v${version}).`,
+    checkFailed:
+      "No se pudo comprobar si hay actualizaciones. Revisa tu conexión e inténtalo de nuevo.",
+  },
 };

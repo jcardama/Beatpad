@@ -1,6 +1,7 @@
 mod commands;
 mod input;
 mod state;
+mod update_check;
 
 use state::AppState;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
@@ -11,7 +12,6 @@ use tauri_plugin_opener::OpenerExt;
 const URL_GITHUB: &str = "https://github.com/jcardama/Beatpad";
 const URL_CHANGELOG: &str = "https://github.com/jcardama/Beatpad/blob/main/CHANGELOG.md";
 const URL_LICENSE: &str = "https://github.com/jcardama/Beatpad/blob/main/LICENSE";
-const URL_RELEASES: &str = "https://github.com/jcardama/Beatpad/releases";
 const URL_FACEBOOK: &str = "https://www.facebook.com/beatxpad";
 
 /// Menu items whose enabled state changes at runtime (greyed when the board is
@@ -41,6 +41,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             app.manage(AppState::spawn(app.handle().clone()));
+            update_check::spawn_update_checker(app.handle().clone());
             fit_window_square(app);
             app.set_menu(build_menu(app)?)?;
             // Auto-hide the in-window menu bar; Alt toggles it (see `toggle_menu`).
@@ -60,7 +61,9 @@ pub fn run() {
             commands::load_beat_pack,
             commands::clear_pad,
             commands::toggle_menu,
-            set_board_enabled
+            set_board_enabled,
+            check_for_updates,
+            open_releases_page
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -175,11 +178,17 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
     match event.id().as_ref() {
         "about" => {
             app.dialog()
-                .message("BeatPad 0.1.0\nA Launchpad-style beat pad.")
+                .message(format!(
+                    "BeatPad {}\nA Launchpad-style beat pad.",
+                    update_check::current_version()
+                ))
                 .title("About BeatPad")
                 .show(|_| {});
         }
-        "check_updates" => open_url(app, URL_RELEASES),
+        // The frontend runs the check and surfaces the (localized) result.
+        "check_updates" => {
+            let _ = app.emit("menu:check-updates", ());
+        }
         "preferences" => {
             let _ = app.emit("menu:preferences", ());
         }
@@ -243,6 +252,21 @@ fn open_url(app: &AppHandle, url: &str) {
 fn set_board_enabled(enabled: bool, items: tauri::State<MenuItems>) {
     let _ = items.close.set_enabled(enabled);
     let _ = items.clear.set_enabled(enabled);
+}
+
+/// Check GitHub for a newer release (off the UI thread). The frontend decides
+/// how to surface the result.
+#[tauri::command]
+async fn check_for_updates() -> update_check::UpdateStatus {
+    tauri::async_runtime::spawn_blocking(update_check::check_now)
+        .await
+        .unwrap_or(update_check::UpdateStatus::Failed)
+}
+
+/// Open the releases page (only when the user opts in from the update prompt).
+#[tauri::command]
+fn open_releases_page(app: AppHandle) {
+    open_url(&app, update_check::RELEASES_PAGE_URL);
 }
 
 /// Size the window to a square that fits the display (capped to an arbitrary

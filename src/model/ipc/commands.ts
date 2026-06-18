@@ -69,9 +69,30 @@ export interface SoundLoadFailed {
 export const onSoundLoadFailed = (handler: (e: SoundLoadFailed) => void) =>
   ipc.listen<SoundLoadFailed>("sound-load-failed", handler);
 
+/** Result of an update check (mirrors the Rust `UpdateStatus`). */
+export type UpdateStatus =
+  | { kind: "available"; latest: string }
+  | { kind: "upToDate"; current: string }
+  | { kind: "failed" };
+
+/** Ask GitHub whether a newer release exists (runs off the UI thread). */
+export const checkForUpdates = (): Promise<UpdateStatus> =>
+  ipc.invoke<UpdateStatus>("check_for_updates");
+
+/** Open the releases page (only when the user opts in from the prompt). */
+export const openReleasesPage = (): Promise<void> =>
+  ipc.invoke("open_releases_page");
+
+/** A newer release was found by the background checker; payload is its tag. */
+export const onUpdateAvailable = (handler: (latest: string) => void) =>
+  ipc.listen<string>("update:available", handler);
+
 /** Native menu events. */
 export const onMenuOpenPack = (handler: () => void) =>
   ipc.listen<null>("menu:open-pack", () => handler());
+
+export const onMenuCheckUpdates = (handler: () => void) =>
+  ipc.listen<null>("menu:check-updates", () => handler());
 
 export const onMenuClearBoard = (handler: () => void) =>
   ipc.listen<null>("menu:clear-board", () => handler());

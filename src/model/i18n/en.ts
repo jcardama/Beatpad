@@ -70,6 +70,14 @@ export const en = {
     soundLoadFailed: (pad: number, error: string): string =>
       `Pad ${pad}: couldn't play that sound.\n${error}`,
   },
+  update: {
+    available: (version: string): string =>
+      `BeatPad v${version} is available. Open the releases page to download it?`,
+    upToDate: (version: string): string =>
+      `You're on the latest version (v${version}).`,
+    checkFailed:
+      "Couldn't check for updates. Check your connection and try again.",
+  },
 };
 
 /** The translation contract: the exact shape of the English catalog. */
