@@ -51,7 +51,9 @@ export function useKeyboardInput({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) return;
+      // Autorepeat must not re-fire bank/mode shortcuts (each mode switch is a
+      // 64-pad IPC fan-out) or re-trigger held pads.
+      if (event.repeat || isEditableTarget(event.target)) return;
       if (kb.scheme === "banked" && event.code === kb.bankKey) {
         event.preventDefault();
         toggleBank();
@@ -63,7 +65,6 @@ export function useKeyboardInput({
         setGlobalMode(mode);
         return;
       }
-      if (event.repeat) return;
       const pad = keyToPad(event.code, bank, kb);
       if (pad === undefined || held.has(pad)) return;
       held.add(pad);
@@ -71,6 +72,7 @@ export function useKeyboardInput({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
       const pad = keyToPad(event.code, bank, kb);
       if (pad === undefined) return;
       held.delete(pad);

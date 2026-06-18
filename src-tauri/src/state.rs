@@ -40,6 +40,13 @@ struct SoundChanged {
     loaded: bool,
 }
 
+/// Emitted when a sample fails to decode/load on the audio thread.
+#[derive(Clone, Serialize)]
+struct SoundLoadFailed {
+    pad: u16,
+    error: String,
+}
+
 /// Shared application state held by Tauri. Holds only the channel sender — the
 /// engine and its kira `AudioManager` live entirely on the audio thread, so
 /// nothing audio-related is ever locked inside a command.
@@ -121,7 +128,16 @@ fn load_one(
                 },
             );
         }
-        Err(e) => log::error!("load pad {} failed: {e}", pad.0),
+        Err(e) => {
+            log::error!("load pad {} failed: {e}", pad.0);
+            let _ = app.emit(
+                "sound-load-failed",
+                SoundLoadFailed {
+                    pad: pad.0,
+                    error: e.to_string(),
+                },
+            );
+        }
     }
 }
 

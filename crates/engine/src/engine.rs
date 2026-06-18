@@ -23,6 +23,11 @@ impl<B: Backend> Engine<B> {
     }
 
     pub fn set_mode(&mut self, pad: PadId, mode: PlayMode) {
+        // Changing a looping pad's mode must stop the voice, or it strands with
+        // no release path.
+        if self.looping.remove(&pad) {
+            self.backend.stop(pad);
+        }
         self.modes.insert(pad, mode);
     }
 
@@ -187,6 +192,19 @@ mod tests {
             engine.backend_mut().calls,
             ["loop 2 true", "play 2", "stop 2"]
         );
+    }
+
+    #[test]
+    fn set_mode_stops_a_running_loop() {
+        let mut engine = Engine::new(MockBackend::default());
+        engine.set_mode(PadId(0), PlayMode::ToggleLoop);
+        engine.handle_event(press(0));
+        assert!(engine.is_looping(PadId(0)));
+
+        // Switching the mode (e.g. from the settings panel) must stop the voice.
+        engine.set_mode(PadId(0), PlayMode::OneShot);
+        assert!(!engine.is_looping(PadId(0)));
+        assert_eq!(engine.backend_mut().calls.last().unwrap(), "stop 0");
     }
 
     #[test]

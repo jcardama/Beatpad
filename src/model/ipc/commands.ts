@@ -55,6 +55,15 @@ export interface SoundChanged {
 export const onSoundChanged = (handler: (e: SoundChanged) => void) =>
   ipc.listen<SoundChanged>("sound-changed", handler);
 
+/** Payload of `sound-load-failed`: a sample failed to decode on the audio thread. */
+export interface SoundLoadFailed {
+  pad: PadId;
+  error: string;
+}
+
+export const onSoundLoadFailed = (handler: (e: SoundLoadFailed) => void) =>
+  ipc.listen<SoundLoadFailed>("sound-load-failed", handler);
+
 /** Native menu events. */
 export const onMenuOpenPack = (handler: () => void) =>
   ipc.listen<null>("menu:open-pack", () => handler());

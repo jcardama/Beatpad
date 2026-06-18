@@ -7,7 +7,7 @@ import {
   loadPadSound,
   setPadMode,
 } from "@/model/ipc/commands";
-import { pickBeatPack, pickSoundFile } from "@/model/ipc/dialog";
+import { pickBeatPack, pickSoundFile, showError } from "@/model/ipc/dialog";
 import { useTransportStore } from "@/model/store/transportStore";
 
 /**
@@ -43,7 +43,12 @@ export function usePadActions() {
     (pad: PadId) =>
       withDialog(async () => {
         const path = await pickSoundFile();
-        if (path) await loadPadSound(pad, path);
+        if (!path) return;
+        try {
+          await loadPadSound(pad, path);
+        } catch (e) {
+          await showError(`Couldn't load that sound.\n${String(e)}`);
+        }
       }),
     [withDialog],
   );
@@ -62,9 +67,13 @@ export function usePadActions() {
       withDialog(async () => {
         const path = await pickBeatPack();
         if (!path) return;
-        resetModes(); // the pack replaces the board
-        const filled = await loadBeatPack(path);
-        setModes(filled);
+        try {
+          const filled = await loadBeatPack(path);
+          resetModes(); // the pack replaces the board (only after a good load)
+          setModes(filled);
+        } catch (e) {
+          await showError(`Couldn't load that pack.\n${String(e)}`);
+        }
       }),
     [withDialog, resetModes, setModes],
   );

@@ -10,6 +10,7 @@ import { usePadActions } from "@/presenters/usePadActions";
 import { usePadGrid } from "@/presenters/usePadGrid";
 import { usePersistSettings } from "@/presenters/usePersistSettings";
 import { useSettings } from "@/presenters/useSettings";
+import { useSoundErrorEvents } from "@/presenters/useSoundErrorEvents";
 import { useSoundEvents } from "@/presenters/useSoundEvents";
 import { useTheme } from "@/presenters/useTheme";
 import { BoardView } from "@/views/BoardView";
@@ -29,6 +30,7 @@ function App() {
   useKeyboardInput({ press, release, bank, toggleBank, setGlobalMode });
   useLoopEvents();
   useSoundEvents();
+  useSoundErrorEvents();
   useMenuEvents({ onOpenPack: loadPack, onClearBoard: clearBoard });
   useMenuToggle();
   useBoardMenuSync();

@@ -19,6 +19,9 @@ const KEYBOARD_VELOCITY: u8 = 127;
 
 #[tauri::command]
 pub fn trigger_pad(pad: u16, state: State<AppState>) {
+    if pad >= PAD_COUNT {
+        return;
+    }
     state.send(AudioCmd::Pad(pad_event(
         pad,
         Phase::Press,
@@ -28,17 +31,26 @@ pub fn trigger_pad(pad: u16, state: State<AppState>) {
 
 #[tauri::command]
 pub fn release_pad(pad: u16, state: State<AppState>) {
+    if pad >= PAD_COUNT {
+        return;
+    }
     state.send(AudioCmd::Pad(pad_event(pad, Phase::Release, 0)));
 }
 
 #[tauri::command]
 pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
+    if pad >= PAD_COUNT {
+        return;
+    }
     state.send(AudioCmd::SetMode(PadId(pad), parse_mode(&mode)));
 }
 
 /// Load (or replace) the sound on a single pad from a file on disk.
 #[tauri::command]
 pub fn load_pad_sound(pad: u16, path: String, state: State<AppState>) -> Result<(), String> {
+    if pad >= PAD_COUNT {
+        return Err("pad out of range".into());
+    }
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
     state.send(AudioCmd::LoadSound(PadId(pad), bytes));
     Ok(())
@@ -76,6 +88,9 @@ pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<Loaded
 /// Remove the sound from a single pad.
 #[tauri::command]
 pub fn clear_pad(pad: u16, state: State<AppState>) {
+    if pad >= PAD_COUNT {
+        return;
+    }
     state.send(AudioCmd::Clear(PadId(pad)));
 }
 
