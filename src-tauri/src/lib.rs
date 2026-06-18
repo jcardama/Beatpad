@@ -44,10 +44,16 @@ pub fn run() {
             update_check::spawn_update_checker(app.handle().clone());
             fit_window_square(app);
             app.set_menu(build_menu(app)?)?;
-            // Auto-hide the in-window menu bar; Alt toggles it (see `toggle_menu`).
-            // macOS uses the always-present global menu bar, so skip it there.
-            #[cfg(not(target_os = "macos"))]
             if let Some(window) = app.get_webview_window("main") {
+                // Apply the bundled icon to the live window. Windows/macOS read
+                // it from the executable, but Linux/WSLg otherwise shows a
+                // generic placeholder in the taskbar.
+                if let Some(icon) = app.default_window_icon() {
+                    let _ = window.set_icon(icon.clone());
+                }
+                // Auto-hide the in-window menu bar; Alt toggles it (see
+                // `toggle_menu`). macOS uses the global menu bar, so skip it.
+                #[cfg(not(target_os = "macos"))]
                 let _ = window.hide_menu();
             }
             Ok(())
