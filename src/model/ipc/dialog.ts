@@ -1,9 +1,4 @@
-import { message, open } from "@tauri-apps/plugin-dialog";
-
-/** Surface an error to the user via a native dialog. */
-export const showError = async (msg: string): Promise<void> => {
-  await message(msg, { title: "BeatPad", kind: "error" });
-};
+import { open } from "@tauri-apps/plugin-dialog";
 
 /** Native file picker for a single audio sample. Returns the path, or null. */
 export async function pickSoundFile(): Promise<string | null> {

@@ -57,7 +57,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       {/* Accent bar: clipped by the container's rounding, so it rounds only on
           the outer (far-left) edge and stays flat where it meets the body. */}
       <span className={cn("w-1.5 shrink-0", ACCENT[toast.variant])} />
-      <div className="flex flex-1 items-start gap-3 px-3 py-2.5">
+      <div className="flex flex-1 items-center gap-3 px-3 py-2.5">
         <p className="flex-1 whitespace-pre-line">{toast.message}</p>
         {toast.action && (
           <button
@@ -66,7 +66,7 @@ function ToastItem({ toast }: { toast: Toast }) {
               toast.action?.onClick();
               dismiss(toast.id);
             }}
-            className="font-medium text-primary hover:underline"
+            className="shrink-0 font-medium text-primary hover:underline"
           >
             {toast.action.label}
           </button>
@@ -75,7 +75,7 @@ function ToastItem({ toast }: { toast: Toast }) {
           type="button"
           aria-label={t((m) => m.toast.dismiss)}
           onClick={() => dismiss(toast.id)}
-          className="text-muted-foreground hover:text-foreground"
+          className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <X className="size-4" />
         </button>

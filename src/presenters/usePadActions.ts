@@ -7,7 +7,8 @@ import {
   loadPadSound,
   setPadMode,
 } from "@/model/ipc/commands";
-import { pickBeatPack, pickSoundFile, showError } from "@/model/ipc/dialog";
+import { pickBeatPack, pickSoundFile } from "@/model/ipc/dialog";
+import { useToastStore } from "@/model/store/toastStore";
 import { useTransportStore } from "@/model/store/transportStore";
 import { useT } from "@/presenters/useT";
 
@@ -21,6 +22,7 @@ export function usePadActions() {
   const resetModes = useTransportStore((s) => s.resetModes);
   const setPath = useTransportStore((s) => s.setPath);
   const resetPaths = useTransportStore((s) => s.resetPaths);
+  const toast = useToastStore((s) => s.show);
   const t = useT();
 
   // Only one native file dialog may be open at a time across all actions.
@@ -52,10 +54,13 @@ export function usePadActions() {
           await loadPadSound(pad, path);
           setPath(pad, path);
         } catch (e) {
-          await showError(t((m) => m.dialog.loadSoundError(String(e))));
+          toast({
+            variant: "error",
+            message: t((m) => m.dialog.loadSoundError(String(e))),
+          });
         }
       }),
-    [withDialog, setPath, t],
+    [withDialog, setPath, toast, t],
   );
 
   const clearSound = useCallback(
@@ -80,17 +85,20 @@ export function usePadActions() {
         try {
           const filled = await loadBeatPack(path);
           if (filled.length === 0) {
-            await showError(t((m) => m.dialog.packNoSounds));
+            toast({ variant: "info", message: t((m) => m.dialog.packNoSounds) });
             return; // the board is left untouched
           }
           resetModes(); // the pack replaces the board (only after a good load)
           resetPaths();
           setModes(filled);
         } catch (e) {
-          await showError(t((m) => m.dialog.loadPackError(String(e))));
+          toast({
+            variant: "error",
+            message: t((m) => m.dialog.loadPackError(String(e))),
+          });
         }
       }),
-    [withDialog, resetModes, resetPaths, setModes, t],
+    [withDialog, resetModes, resetPaths, setModes, toast, t],
   );
 
   return { setMode, assignSound, clearSound, clearBoard, loadPack };
