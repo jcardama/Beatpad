@@ -10,6 +10,7 @@ import {
 } from "@/model/domain/pad";
 import { cn } from "@/lib/utils";
 import type { PadVm } from "@/presenters/padVm";
+import { useT } from "@/presenters/useT";
 import { BankToggle } from "./BankToggle";
 import { PadView } from "./PadView";
 import { ROUND_CONTROL, RoundControl } from "./RoundControl";
@@ -65,6 +66,7 @@ export function BoardView({
   onAssign,
   onClear,
 }: Props) {
+  const t = useT();
   const cells: ReactNode[] = [];
 
   for (let r = 0; r < ROWS; r++) {
@@ -103,7 +105,11 @@ export function BoardView({
       if (r === 0 && c === RIGHT_LANE) {
         cells.push(
           <div key="logo" className="flex items-center justify-center">
-            <img src="/logo.svg" alt="BeatPad" className="size-[68%]" />
+            <img
+              src="/logo.svg"
+              alt={t((m) => m.board.logoAlt)}
+              className="size-[68%]"
+            />
           </div>,
         );
         continue;
@@ -113,15 +119,16 @@ export function BoardView({
       // up (one-shot lowest, then hold-loop, then toggle-loop).
       const modeIndex = BOTTOM_ROW - r;
       if (c === RIGHT_LANE && modeIndex >= 0 && modeIndex < PAD_MODES.length) {
-        const m = PAD_MODES[modeIndex];
-        const Icon = MODE_ICON[m.id];
+        const id = PAD_MODES[modeIndex];
+        const Icon = MODE_ICON[id];
+        const label = t((m) => m.mode[id]);
         cells.push(
           <RoundControl
-            key={`mode-${m.id}`}
-            active={mode === m.id}
-            title={`${m.label} (all pads)`}
-            label={`${m.label} — apply to all pads`}
-            onClick={() => onSetGlobalMode(m.id)}
+            key={`mode-${id}`}
+            active={mode === id}
+            title={t((m) => m.board.modeAllPadsTitle(label))}
+            label={t((m) => m.board.modeApplyAllLabel(label))}
+            onClick={() => onSetGlobalMode(id)}
           >
             <Icon className="size-[45%]" />
           </RoundControl>,

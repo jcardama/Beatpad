@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { keyLabel } from "@/model/domain/keybindings";
+import { useT } from "@/presenters/useT";
 
 interface Props {
   code: string;
@@ -11,6 +12,7 @@ interface Props {
 
 /** Click to record the next key press as a binding. Esc cancels. */
 export function KeyRecorder({ code, onCapture, className }: Props) {
+  const t = useT();
   const [recording, setRecording] = useState(false);
 
   useEffect(() => {
@@ -29,7 +31,11 @@ export function KeyRecorder({ code, onCapture, className }: Props) {
   return (
     <button
       type="button"
-      title={recording ? "Press a key… (Esc to cancel)" : "Click to rebind"}
+      title={
+        recording
+          ? t((m) => m.keyRecorder.recording)
+          : t((m) => m.keyRecorder.rebind)
+      }
       onClick={() => setRecording(true)}
       className={cn(
         "flex items-center justify-center rounded-md border text-sm font-medium transition-colors",

@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PAD_MODES, type PadId, type PadMode } from "@/model/domain/pad";
 import type { PadVm } from "@/presenters/padVm";
+import { useT } from "@/presenters/useT";
 
 interface Props {
   pad: PadVm;
@@ -35,6 +36,7 @@ export function PadView({
   onAssign,
   onClear,
 }: Props) {
+  const t = useT();
   const empty = !pad.loaded;
   const press = (e: PointerEvent) => {
     if (!empty && e.button === 0) onPress(pad.id);
@@ -50,7 +52,7 @@ export function PadView({
           type="button"
           // Played via pointer or the global keyboard handler, not Tab focus.
           tabIndex={-1}
-          aria-label={`Pad ${pad.id + 1}`}
+          aria-label={t((m) => m.board.padLabel(pad.id + 1))}
           onPointerDown={press}
           onPointerUp={release}
           onPointerLeave={release}
@@ -75,22 +77,22 @@ export function PadView({
           value={pad.mode}
           onValueChange={(v) => onSetMode(pad.id, v as PadMode)}
         >
-          {PAD_MODES.map((m) => (
-            <ContextMenuRadioItem key={m.id} value={m.id}>
-              {m.label}
+          {PAD_MODES.map((id) => (
+            <ContextMenuRadioItem key={id} value={id}>
+              {t((m) => m.mode[id])}
             </ContextMenuRadioItem>
           ))}
         </ContextMenuRadioGroup>
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => onAssign(pad.id)}>
-          {empty ? "Load sound…" : "Change sound…"}
+          {empty ? t((m) => m.pad.loadSound) : t((m) => m.pad.changeSound)}
         </ContextMenuItem>
         {!empty && (
           <ContextMenuItem
             variant="destructive"
             onSelect={() => onClear(pad.id)}
           >
-            Clear sound
+            {t((m) => m.pad.clearSound)}
           </ContextMenuItem>
         )}
       </ContextMenuContent>

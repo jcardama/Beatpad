@@ -1,5 +1,6 @@
 import { useBank } from "@/presenters/useBank";
 import { useBoardMenuSync } from "@/presenters/useBoardMenuSync";
+import { useDocumentLang } from "@/presenters/useDocumentLang";
 import { useKeybindings } from "@/presenters/useKeybindings";
 import { useKeyboardInput } from "@/presenters/useKeyboardInput";
 import { useLoopEvents } from "@/presenters/useLoopEvents";
@@ -27,6 +28,7 @@ function App() {
   const settings = useSettings();
   const keys = useKeybindings();
   useTheme();
+  useDocumentLang();
   usePersistSettings();
   usePersistBoard();
   useKeyboardInput({ press, release, bank, toggleBank, setGlobalMode });
@@ -63,6 +65,8 @@ function App() {
         onOpenChange={settings.setOpen}
         theme={settings.theme}
         onThemeChange={settings.setTheme}
+        locale={settings.locale}
+        onLocaleChange={settings.setLocale}
         keybindings={keys.keybindings}
         onSetScheme={keys.setScheme}
         onAssignPadKey={keys.assignPadKey}

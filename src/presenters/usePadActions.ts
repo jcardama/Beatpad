@@ -9,6 +9,7 @@ import {
 } from "@/model/ipc/commands";
 import { pickBeatPack, pickSoundFile, showError } from "@/model/ipc/dialog";
 import { useTransportStore } from "@/model/store/transportStore";
+import { useT } from "@/presenters/useT";
 
 /**
  * Per-pad actions surfaced by the pad context menu: set a pad's play mode,
@@ -20,6 +21,7 @@ export function usePadActions() {
   const resetModes = useTransportStore((s) => s.resetModes);
   const setPath = useTransportStore((s) => s.setPath);
   const resetPaths = useTransportStore((s) => s.resetPaths);
+  const t = useT();
 
   // Only one native file dialog may be open at a time across all actions.
   const dialogOpen = useRef(false);
@@ -50,10 +52,10 @@ export function usePadActions() {
           await loadPadSound(pad, path);
           setPath(pad, path);
         } catch (e) {
-          await showError(`Couldn't load that sound.\n${String(e)}`);
+          await showError(t((m) => m.dialog.loadSoundError(String(e))));
         }
       }),
-    [withDialog, setPath],
+    [withDialog, setPath, t],
   );
 
   const clearSound = useCallback(
@@ -78,17 +80,17 @@ export function usePadActions() {
         try {
           const filled = await loadBeatPack(path);
           if (filled.length === 0) {
-            await showError("That pack had no sounds for this grid.");
+            await showError(t((m) => m.dialog.packNoSounds));
             return; // the board is left untouched
           }
           resetModes(); // the pack replaces the board (only after a good load)
           resetPaths();
           setModes(filled);
         } catch (e) {
-          await showError(`Couldn't load that pack.\n${String(e)}`);
+          await showError(t((m) => m.dialog.loadPackError(String(e))));
         }
       }),
-    [withDialog, resetModes, resetPaths, setModes],
+    [withDialog, resetModes, resetPaths, setModes, t],
   );
 
   return { setMode, assignSound, clearSound, clearBoard, loadPack };

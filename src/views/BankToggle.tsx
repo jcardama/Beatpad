@@ -1,4 +1,5 @@
 import type { Bank } from "@/model/domain/pad";
+import { useT } from "@/presenters/useT";
 import { BankIcon } from "./BankIcon";
 import { RoundControl } from "./RoundControl";
 
@@ -12,11 +13,11 @@ interface Props {
  * via [`BankIcon`]; click or Tab flips it.
  */
 export function BankToggle({ bank, onToggle }: Props) {
-  const half = bank === "top" ? "Top" : "Bottom";
+  const t = useT();
   return (
     <RoundControl
-      title={`${half} half active — Tab to switch`}
-      label={`Switch bank (${half} half active)`}
+      title={t((m) => m.board.switchBankTitle(bank))}
+      label={t((m) => m.board.switchBankLabel(bank))}
       onClick={onToggle}
     >
       <BankIcon bank={bank} />

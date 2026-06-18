@@ -1,3 +1,4 @@
+import { useLocaleStore } from "@/model/store/localeStore";
 import { useSettingsStore } from "@/model/store/settingsStore";
 
 /** Presentation logic for the settings panel. */
@@ -6,5 +7,7 @@ export function useSettings() {
   const setOpen = useSettingsStore((s) => s.setOpen);
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
-  return { open, setOpen, theme, setTheme };
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
+  return { open, setOpen, theme, setTheme, locale, setLocale };
 }

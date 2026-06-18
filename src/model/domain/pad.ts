@@ -6,11 +6,11 @@ export type PadMode = "one_shot" | "hold_loop" | "toggle_loop";
 
 export const DEFAULT_MODE: PadMode = "one_shot";
 
-/** Selectable play modes, in display order. */
-export const PAD_MODES: readonly { id: PadMode; label: string }[] = [
-  { id: "one_shot", label: "One-shot" },
-  { id: "hold_loop", label: "Hold loop" },
-  { id: "toggle_loop", label: "Toggle loop" },
+/** Selectable play modes, in display order. Labels live in the i18n catalog. */
+export const PAD_MODES: readonly PadMode[] = [
+  "one_shot",
+  "hold_loop",
+  "toggle_loop",
 ];
 
 /** 8×8 grid, played as two stacked banks of 4 rows each. */
