@@ -8,6 +8,7 @@ import { useMenuToggle } from "@/presenters/useMenuToggle";
 import { useModeControl } from "@/presenters/useModeControl";
 import { usePadActions } from "@/presenters/usePadActions";
 import { usePadGrid } from "@/presenters/usePadGrid";
+import { usePersistBoard } from "@/presenters/usePersistBoard";
 import { usePersistSettings } from "@/presenters/usePersistSettings";
 import { useSettings } from "@/presenters/useSettings";
 import { useSoundErrorEvents } from "@/presenters/useSoundErrorEvents";
@@ -27,6 +28,7 @@ function App() {
   const keys = useKeybindings();
   useTheme();
   usePersistSettings();
+  usePersistBoard();
   useKeyboardInput({ press, release, bank, toggleBank, setGlobalMode });
   useLoopEvents();
   useSoundEvents();

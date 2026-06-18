@@ -13,17 +13,22 @@ export function usePersistSettings(): void {
   const keybindings = useKeybindingsStore((s) => s.keybindings);
   const setKeybindings = useKeybindingsStore((s) => s.setKeybindings);
   const hydrated = useRef(false);
+  // Snapshots taken at mount, so a user edit made before the load resolves
+  // (object identity changes on any setter) isn't clobbered by the loaded value.
+  const themeAtMount = useRef(useSettingsStore.getState().theme).current;
+  const keysAtMount = useRef(useKeybindingsStore.getState().keybindings).current;
 
   useEffect(() => {
     void Promise.all([
       loadSetting<Theme>("theme", DEFAULT_THEME),
       loadSetting<unknown>("keybindings", null),
     ]).then(([t, kb]) => {
-      setTheme(t);
-      setKeybindings(normalizeKeybindings(kb));
+      if (useSettingsStore.getState().theme === themeAtMount) setTheme(t);
+      if (useKeybindingsStore.getState().keybindings === keysAtMount)
+        setKeybindings(normalizeKeybindings(kb));
       hydrated.current = true;
     });
-  }, [setTheme, setKeybindings]);
+  }, [setTheme, setKeybindings, themeAtMount, keysAtMount]);
 
   // Don't clobber stored values before the initial load completes.
   useEffect(() => {

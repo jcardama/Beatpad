@@ -86,12 +86,16 @@ impl AppState {
                         load_one(&app, &mut engine, &mut last_loop, pad, bytes);
                     }
                     AudioCmd::LoadPack(entries) => {
-                        for pad in 0..PAD_COUNT {
-                            clear_one(&app, &mut engine, &mut last_loop, PadId(pad));
-                        }
-                        for entry in entries {
-                            engine.set_mode(entry.pad, entry.mode);
-                            load_one(&app, &mut engine, &mut last_loop, entry.pad, entry.bytes);
+                        // An empty pack (no usable pads) leaves the board intact
+                        // rather than silently wiping it.
+                        if !entries.is_empty() {
+                            for pad in 0..PAD_COUNT {
+                                clear_one(&app, &mut engine, &mut last_loop, PadId(pad));
+                            }
+                            for entry in entries {
+                                engine.set_mode(entry.pad, entry.mode);
+                                load_one(&app, &mut engine, &mut last_loop, entry.pad, entry.bytes);
+                            }
                         }
                     }
                     AudioCmd::Clear(pad) => {

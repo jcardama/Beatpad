@@ -18,6 +18,9 @@ interface TransportState {
   loaded: boolean[];
   /** Per-pad play mode. */
   modes: PadMode[];
+  /** Per-pad source file path for individually-assigned sounds (null = none or
+   *  pack-loaded). Persisted so the board can be restored on startup. */
+  paths: (string | null)[];
   /** The global mode selector's current value (last bulk-applied mode). */
   globalMode: PadMode;
   /** Which half of the grid the keyboard currently addresses. */
@@ -26,6 +29,10 @@ interface TransportState {
   setLooping: (pad: PadId, on: boolean) => void;
   setLoaded: (pad: PadId, on: boolean) => void;
   setPadMode: (pad: PadId, mode: PadMode) => void;
+  /** Record (or clear) a pad's individually-assigned sound path. */
+  setPath: (pad: PadId, path: string | null) => void;
+  /** Forget every per-pad sound path (e.g. clearing the board or loading a pack). */
+  resetPaths: () => void;
   /** Apply one mode to every pad (the global selector). */
   setGlobalMode: (mode: PadMode) => void;
   /** Bulk-set per-pad modes (e.g. after loading a pack). */
@@ -43,6 +50,7 @@ export const useTransportStore = create<TransportState>((set) => ({
   looping: Array<boolean>(PAD_COUNT).fill(false),
   loaded: Array<boolean>(PAD_COUNT).fill(false),
   modes: Array<PadMode>(PAD_COUNT).fill(DEFAULT_MODE),
+  paths: Array<string | null>(PAD_COUNT).fill(null),
   globalMode: DEFAULT_MODE,
   bank: DEFAULT_BANK,
   setLit: (pad, on) =>
@@ -69,6 +77,13 @@ export const useTransportStore = create<TransportState>((set) => ({
       modes[pad] = mode;
       return { modes };
     }),
+  setPath: (pad, path) =>
+    set((state) => {
+      const paths = state.paths.slice();
+      paths[pad] = path;
+      return { paths };
+    }),
+  resetPaths: () => set({ paths: Array<string | null>(PAD_COUNT).fill(null) }),
   setGlobalMode: (mode) =>
     set({ globalMode: mode, modes: Array<PadMode>(PAD_COUNT).fill(mode) }),
   setModes: (entries) =>

@@ -71,7 +71,7 @@ export function normalizeKeybindings(raw: unknown): Keybindings {
     { length: padKeyCount(scheme) },
     (_, i) => source[i] ?? "",
   );
-  return {
+  return dedupeCodes({
     scheme,
     padKeys,
     bankKey: typeof r.bankKey === "string" ? r.bankKey : "Tab",
@@ -79,6 +79,28 @@ export function normalizeKeybindings(raw: unknown): Keybindings {
       one_shot: r.modeKeys?.one_shot ?? "",
       hold_loop: r.modeKeys?.hold_loop ?? "",
       toggle_loop: r.modeKeys?.toggle_loop ?? "",
+    },
+  });
+}
+
+/** Enforce the editor's invariant — each code binds at most one slot — on
+ *  hand-edited saves. First occurrence (pads, then bank, then modes) wins;
+ *  later duplicates are blanked. */
+function dedupeCodes(kb: Keybindings): Keybindings {
+  const seen = new Set<string>();
+  const keep = (code: string): string => {
+    if (!code || seen.has(code)) return "";
+    seen.add(code);
+    return code;
+  };
+  return {
+    ...kb,
+    padKeys: kb.padKeys.map(keep),
+    bankKey: keep(kb.bankKey),
+    modeKeys: {
+      one_shot: keep(kb.modeKeys.one_shot),
+      hold_loop: keep(kb.modeKeys.hold_loop),
+      toggle_loop: keep(kb.modeKeys.toggle_loop),
     },
   };
 }

@@ -18,6 +18,8 @@ export function usePadActions() {
   const storeSetMode = useTransportStore((s) => s.setPadMode);
   const setModes = useTransportStore((s) => s.setModes);
   const resetModes = useTransportStore((s) => s.resetModes);
+  const setPath = useTransportStore((s) => s.setPath);
+  const resetPaths = useTransportStore((s) => s.resetPaths);
 
   // Only one native file dialog may be open at a time across all actions.
   const dialogOpen = useRef(false);
@@ -46,21 +48,27 @@ export function usePadActions() {
         if (!path) return;
         try {
           await loadPadSound(pad, path);
+          setPath(pad, path);
         } catch (e) {
           await showError(`Couldn't load that sound.\n${String(e)}`);
         }
       }),
-    [withDialog],
+    [withDialog, setPath],
   );
 
-  const clearSound = useCallback((pad: PadId) => {
-    void clearPad(pad);
-  }, []);
+  const clearSound = useCallback(
+    (pad: PadId) => {
+      void clearPad(pad);
+      setPath(pad, null);
+    },
+    [setPath],
+  );
 
   const clearBoard = useCallback(() => {
     for (let pad = 0; pad < PAD_COUNT; pad++) void clearPad(pad);
     resetModes();
-  }, [resetModes]);
+    resetPaths();
+  }, [resetModes, resetPaths]);
 
   const loadPack = useCallback(
     () =>
@@ -69,13 +77,18 @@ export function usePadActions() {
         if (!path) return;
         try {
           const filled = await loadBeatPack(path);
+          if (filled.length === 0) {
+            await showError("That pack had no sounds for this grid.");
+            return; // the board is left untouched
+          }
           resetModes(); // the pack replaces the board (only after a good load)
+          resetPaths();
           setModes(filled);
         } catch (e) {
           await showError(`Couldn't load that pack.\n${String(e)}`);
         }
       }),
-    [withDialog, resetModes, setModes],
+    [withDialog, resetModes, resetPaths, setModes],
   );
 
   return { setMode, assignSound, clearSound, clearBoard, loadPack };

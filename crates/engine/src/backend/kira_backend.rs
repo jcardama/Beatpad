@@ -34,8 +34,9 @@ impl Track for KiraTrack {
         } else {
             self.data.clone()
         };
-        if let Ok(handle) = self.manager.borrow_mut().play(data) {
-            self.handle = Some(handle);
+        match self.manager.borrow_mut().play(data) {
+            Ok(handle) => self.handle = Some(handle),
+            Err(e) => log::warn!("pad play failed: {e}"),
         }
     }
 

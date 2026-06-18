@@ -66,18 +66,26 @@ pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<Loaded
     let mut loaded = Vec::new();
     for mapping in &beat.manifest.pads {
         if mapping.pad >= PAD_COUNT {
-            continue; // pack addresses a pad outside our grid
+            log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
+            continue;
         }
-        if let Some(bytes) = beat.samples.get(&mapping.sample) {
-            entries.push(PackEntry {
-                pad: PadId(mapping.pad),
-                bytes: bytes.clone(),
-                mode: from_format_mode(mapping.mode),
-            });
-            loaded.push(LoadedPad {
-                pad: mapping.pad,
-                mode: format_mode_str(mapping.mode).to_string(),
-            });
+        match beat.samples.get(&mapping.sample) {
+            Some(bytes) => {
+                entries.push(PackEntry {
+                    pad: PadId(mapping.pad),
+                    bytes: bytes.clone(),
+                    mode: from_format_mode(mapping.mode),
+                });
+                loaded.push(LoadedPad {
+                    pad: mapping.pad,
+                    mode: format_mode_str(mapping.mode).to_string(),
+                });
+            }
+            None => log::warn!(
+                "pack pad {} references missing sample '{}'; skipped",
+                mapping.pad,
+                mapping.sample
+            ),
         }
     }
 

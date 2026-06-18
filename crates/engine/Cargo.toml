@@ -8,3 +8,4 @@ authors.workspace = true
 
 [dependencies]
 kira = "0.12"
+log = "0.4"
