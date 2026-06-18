@@ -6,6 +6,8 @@ All notable changes to BeatPad are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-17
+
 ### Added
 - Project foundation: Tauri v2 shell, React + TypeScript + Tailwind + shadcn frontend (MVP layering: model → presenters → views), and a Rust audio engine (`kira`) behind swappable `Backend`/`Track`/`Effect` traits.
 - Keyboard → `PadEvent` → audio-thread pipeline (MIDI-ready); the engine runs on its own thread and is never locked behind a `Mutex`.
@@ -17,10 +19,12 @@ All notable changes to BeatPad are documented here. The format follows
 - Settings panel: theme (System/Dark/Light), language, and fully remappable keybindings with click-to-record.
 - Internationalization: typed message catalogs with OS-language detection, an in-app language switch, persistence, and a synced `<html lang>`. Ships **English** and **Spanish**.
 - Board persistence: per-pad assigned sounds and modes are saved and replayed on startup (missing files are dropped silently).
+- Automatic update check: polls GitHub Releases on startup and once a day, plus a **Check for Updates** menu item, surfacing the result in-app (no redirect) with an opt-in to open the releases page.
 
 ### Changed
 - Grew the grid from the original 4×4 scaffold to 8×8; reverted the custom titlebar to the native OS titlebar + menu.
 - Theme, language, and keybindings follow the OS by default and persist via the store plugin.
+- The About dialog and update check read the version from the build (`CARGO_PKG_VERSION`) rather than a hardcoded string.
 - Updated dependencies: `zip` 8, `@vitejs/plugin-react` 5, TypeScript 6, and the CI GitHub Actions (v6); CI now runs with `--locked`.
 
 ### Fixed
@@ -34,3 +38,6 @@ All notable changes to BeatPad are documented here. The format follows
 - Set a restrictive Content-Security-Policy and removed the unused `opener` capability.
 - `.beat` reads are memory-bounded (per-entry, per-sample, and total-size caps), reject Zip-slip paths, and validate `format_version`.
 - Per-pad IPC commands reject out-of-grid pad indices.
+
+[Unreleased]: https://github.com/jcardama/Beatpad/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jcardama/Beatpad/releases/tag/v0.1.0
