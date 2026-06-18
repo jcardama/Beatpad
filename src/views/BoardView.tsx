@@ -27,6 +27,8 @@ const MODE_ICON: Record<PadMode, typeof Circle> = {
 interface Props {
   pads: PadVm[];
   bank: Bank;
+  /** Whether the banked layout is active (bank toggle + half-dimming). */
+  banked: boolean;
   mode: PadMode;
   onToggleBank: () => void;
   onPress: (pad: PadId) => void;
@@ -55,6 +57,7 @@ function reservedDot(key: string): ReactNode {
 export function BoardView({
   pads,
   bank,
+  banked,
   mode,
   onToggleBank,
   onPress,
@@ -75,7 +78,7 @@ export function BoardView({
           <PadView
             key={`p${pad.id}`}
             pad={pad}
-            active={pad.bank === bank}
+            active={!banked || pad.bank === bank}
             onPress={onPress}
             onRelease={onRelease}
             onSetMode={onSetPadMode}
@@ -86,9 +89,15 @@ export function BoardView({
         continue;
       }
 
-      // Bank toggle: top-left.
+      // Bank toggle: top-left (banked layout only).
       if (r === 0 && c === 0) {
-        cells.push(<BankToggle key="bank" bank={bank} onToggle={onToggleBank} />);
+        cells.push(
+          banked ? (
+            <BankToggle key="bank" bank={bank} onToggle={onToggleBank} />
+          ) : (
+            reservedDot("bank-empty")
+          ),
+        );
         continue;
       }
 

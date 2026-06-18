@@ -1,14 +1,15 @@
 import { useCallback } from "react";
 
+import { padLabel } from "@/model/domain/keybindings";
 import {
   PAD_COUNT,
   padBank,
-  padLabel,
   type Bank,
   type PadId,
   type PadMode,
 } from "@/model/domain/pad";
 import { releasePad, triggerPad } from "@/model/ipc/commands";
+import { useKeybindingsStore } from "@/model/store/keybindingsStore";
 import { useTransportStore } from "@/model/store/transportStore";
 
 /** View-model for a single pad. */
@@ -32,6 +33,7 @@ export function usePadGrid() {
   const looping = useTransportStore((s) => s.looping);
   const loaded = useTransportStore((s) => s.loaded);
   const modes = useTransportStore((s) => s.modes);
+  const keybindings = useKeybindingsStore((s) => s.keybindings);
   const setLit = useTransportStore((s) => s.setLit);
 
   const press = useCallback(
@@ -52,7 +54,7 @@ export function usePadGrid() {
 
   const pads: PadVm[] = Array.from({ length: PAD_COUNT }, (_, id) => ({
     id,
-    label: padLabel(id),
+    label: padLabel(id, keybindings),
     bank: padBank(id),
     lit: lit[id] ?? false,
     looping: looping[id] ?? false,

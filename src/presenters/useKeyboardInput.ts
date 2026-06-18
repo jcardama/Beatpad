@@ -1,12 +1,16 @@
 import { useEffect } from "react";
 
-import { keyToPad, TAB_KEY, type Bank, type PadId } from "@/model/domain/pad";
+import { keyToPad } from "@/model/domain/keybindings";
+import type { Bank, PadId, PadMode } from "@/model/domain/pad";
+import { useKeybindingsStore } from "@/model/store/keybindingsStore";
+import { useSettingsStore } from "@/model/store/settingsStore";
 
 interface Handlers {
   press: (pad: PadId) => void;
   release: (pad: PadId) => void;
   bank: Bank;
   toggleBank: () => void;
+  setGlobalMode: (mode: PadMode) => void;
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -18,30 +22,56 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Binds the keyboard to the active grid bank. Keys resolve via `event.code`
- * (layout-independent), autorepeat is ignored, editable targets are skipped,
- * and TAB flips banks. Any held pads are released on bank switch, window blur,
- * or unmount so a pad never sticks.
+ * Binds the keyboard to the active grid bank using the configurable keybindings.
+ * Keys resolve via `event.code` (layout-independent); autorepeat is ignored,
+ * editable targets skipped, the bank key flips banks, and mode keys switch the
+ * global play mode. Disabled while the settings panel is open (so it can capture
+ * keys for rebinding). Held pads release on bank switch, blur, or unmount.
  */
-export function useKeyboardInput({ press, release, bank, toggleBank }: Handlers): void {
+export function useKeyboardInput({
+  press,
+  release,
+  bank,
+  toggleBank,
+  setGlobalMode,
+}: Handlers): void {
+  const kb = useKeybindingsStore((s) => s.keybindings);
+  const settingsOpen = useSettingsStore((s) => s.open);
+
   useEffect(() => {
+    if (settingsOpen) return; // the settings recorder owns the keyboard then
     const held = new Set<PadId>();
 
+    const modeForCode = (code: string): PadMode | undefined => {
+      if (!code) return undefined;
+      if (code === kb.modeKeys.one_shot) return "one_shot";
+      if (code === kb.modeKeys.hold_loop) return "hold_loop";
+      if (code === kb.modeKeys.toggle_loop) return "toggle_loop";
+      return undefined;
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code === TAB_KEY) {
-        event.preventDefault(); // don't let TAB move focus
+      if (isEditableTarget(event.target)) return;
+      if (kb.scheme === "banked" && event.code === kb.bankKey) {
+        event.preventDefault();
         toggleBank();
         return;
       }
-      if (event.repeat || isEditableTarget(event.target)) return;
-      const pad = keyToPad(event.code, bank);
+      const mode = modeForCode(event.code);
+      if (mode) {
+        event.preventDefault();
+        setGlobalMode(mode);
+        return;
+      }
+      if (event.repeat) return;
+      const pad = keyToPad(event.code, bank, kb);
       if (pad === undefined || held.has(pad)) return;
       held.add(pad);
       press(pad);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const pad = keyToPad(event.code, bank);
+      const pad = keyToPad(event.code, bank, kb);
       if (pad === undefined) return;
       held.delete(pad);
       release(pad);
@@ -56,10 +86,10 @@ export function useKeyboardInput({ press, release, bank, toggleBank }: Handlers)
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", onBlur);
     return () => {
-      held.forEach(release); // release everything held in this bank before switching
+      held.forEach(release);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
     };
-  }, [press, release, bank, toggleBank]);
+  }, [press, release, bank, toggleBank, setGlobalMode, kb, settingsOpen]);
 }

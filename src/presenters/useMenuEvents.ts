@@ -6,7 +6,6 @@ import {
   onMenuPreferences,
   onMenuTheme,
 } from "@/model/ipc/commands";
-import { showComingSoon } from "@/model/ipc/dialog";
 import { useSettingsStore } from "@/model/store/settingsStore";
 
 interface Handlers {
@@ -17,16 +16,17 @@ interface Handlers {
 /** Bridges native menu events to app actions. */
 export function useMenuEvents({ onOpenPack, onClearBoard }: Handlers): void {
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const setOpen = useSettingsStore((s) => s.setOpen);
 
   useEffect(() => {
     const subs = [
       onMenuOpenPack(onOpenPack),
       onMenuClearBoard(onClearBoard),
       onMenuTheme(setTheme),
-      onMenuPreferences(() => void showComingSoon("Settings")),
+      onMenuPreferences(() => setOpen(true)),
     ];
     return () => {
       for (const sub of subs) void sub.then((off) => off());
     };
-  }, [onOpenPack, onClearBoard, setTheme]);
+  }, [onOpenPack, onClearBoard, setTheme, setOpen]);
 }

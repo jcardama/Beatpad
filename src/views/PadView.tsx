@@ -54,8 +54,8 @@ export function PadView({
           className={cn(
             "flex select-none items-center justify-center rounded-[16%] border text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
             empty
-              ? "border border-dashed border-border bg-transparent text-muted-foreground/40"
-              : "border-primary/25 bg-gradient-to-br from-primary/35 to-primary/10 text-foreground/80",
+              ? "border border-dashed border-border bg-muted/40 text-muted-foreground"
+              : "border-primary/30 bg-gradient-to-br from-primary/40 to-primary/15 text-foreground",
             !empty && !active && "opacity-45",
             !empty && pad.looping && "ring-2 ring-primary animate-pulse",
             !empty &&
