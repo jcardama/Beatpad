@@ -6,7 +6,7 @@ All notable changes to BeatPad are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-06-17
+## [0.1.0] - 2026-06-18
 
 ### Added
 - Project foundation: Tauri v2 shell, React + TypeScript + Tailwind + shadcn frontend (MVP layering: model → presenters → views), and a Rust audio engine (`kira`) behind swappable `Backend`/`Track`/`Effect` traits.
@@ -20,10 +20,12 @@ All notable changes to BeatPad are documented here. The format follows
 - Internationalization: typed message catalogs with OS-language detection, an in-app language switch, persistence, and a synced `<html lang>`. Ships **English** and **Spanish**.
 - Board persistence: per-pad assigned sounds and modes are saved and replayed on startup (missing files are dropped silently).
 - Automatic update check: polls GitHub Releases on startup and once a day, plus a **Check for Updates** menu item, surfacing the result in-app (no redirect) with an opt-in to open the releases page.
+- In-app toast notifications: update results and sample/pack load failures surface as themed, auto-dismissing toasts instead of native OS dialogs.
 
 ### Changed
 - Grew the grid from the original 4×4 scaffold to 8×8; reverted the custom titlebar to the native OS titlebar + menu.
 - Theme, language, and keybindings follow the OS by default and persist via the store plugin.
+- Refined the visual language: a tighter, weight-led type scale (ported from the Spotify Mobile kit, rendered in Geist) over a brand-anchored palette — `#333` ink as light-mode text and the dark surface family, with `#277bb2` as the sole accent.
 - The About dialog and update check read the version from the build (`CARGO_PKG_VERSION`) rather than a hardcoded string.
 - Updated dependencies: `zip` 8, `@vitejs/plugin-react` 5, TypeScript 6, and the CI GitHub Actions (v6); CI now runs with `--locked`.
 
@@ -33,6 +35,7 @@ All notable changes to BeatPad are documented here. The format follows
 - Sample-load and pack-load failures surface to the user; dropped pack pads (out-of-grid or missing sample) and kira play errors are logged.
 - Changing a looping pad's mode stops the voice instead of stranding it; one-shot hits skip a redundant loop reset.
 - Keyboard autorepeat no longer floods the engine with IPC, and key events are ignored while typing in inputs.
+- The BeatPad window icon is applied at runtime, so Linux/WSLg shows it in the taskbar instead of a generic placeholder.
 
 ### Security
 - Set a restrictive Content-Security-Policy and removed the unused `opener` capability.
