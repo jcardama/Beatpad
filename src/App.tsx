@@ -18,6 +18,7 @@ import { useTheme } from "@/presenters/useTheme";
 import { useUpdateCheck } from "@/presenters/useUpdateCheck";
 import { BoardView } from "@/views/BoardView";
 import { SettingsDialog } from "@/views/SettingsDialog";
+import { Toaster } from "@/views/Toaster";
 
 /** Composition root: wires presenters to the board, keyboard, and engine events. */
 function App() {
@@ -76,6 +77,8 @@ function App() {
         onAssignModeKey={keys.assignModeKey}
         onResetKeybindings={keys.reset}
       />
+
+      <Toaster />
     </main>
   );
 }

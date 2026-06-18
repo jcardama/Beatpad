@@ -71,12 +71,15 @@ export const en = {
       `Pad ${pad}: couldn't play that sound.\n${error}`,
   },
   update: {
-    available: (version: string): string =>
-      `BeatPad v${version} is available. Open the releases page to download it?`,
+    available: (version: string): string => `BeatPad v${version} is available.`,
+    download: "Download",
     upToDate: (version: string): string =>
       `You're on the latest version (v${version}).`,
     checkFailed:
       "Couldn't check for updates. Check your connection and try again.",
+  },
+  toast: {
+    dismiss: "Dismiss",
   },
 };
 

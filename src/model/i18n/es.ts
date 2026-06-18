@@ -68,10 +68,13 @@ export const es: Messages = {
       `Pad ${pad}: no se pudo reproducir ese sonido.\n${error}`,
   },
   update: {
-    available: (version) =>
-      `BeatPad v${version} ya está disponible. ¿Abrir la página de descargas?`,
+    available: (version) => `BeatPad v${version} ya está disponible.`,
+    download: "Descargar",
     upToDate: (version) => `Tienes la última versión (v${version}).`,
     checkFailed:
       "No se pudo comprobar si hay actualizaciones. Revisa tu conexión e inténtalo de nuevo.",
+  },
+  toast: {
+    dismiss: "Cerrar",
   },
 };
