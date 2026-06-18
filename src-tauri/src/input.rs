@@ -11,3 +11,16 @@ pub fn pad_event(pad: u16, phase: Phase, velocity: u8) -> PadEvent {
         phase,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pad_event_carries_pad_phase_and_velocity() {
+        let event = pad_event(7, Phase::Press, 100);
+        assert_eq!(event.pad, PadId(7));
+        assert_eq!(event.velocity, 100);
+        assert!(matches!(event.phase, Phase::Press));
+    }
+}

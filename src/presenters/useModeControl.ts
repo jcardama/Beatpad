@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 
-import { PAD_COUNT, type PadMode } from "@/model/domain/pad";
-import { setPadMode } from "@/model/ipc/commands";
+import { type PadMode } from "@/model/domain/pad";
+import { setAllPadModes } from "@/model/ipc/commands";
 import { useTransportStore } from "@/model/store/transportStore";
 
 /**
@@ -15,7 +15,7 @@ export function useModeControl() {
   const setMode = useCallback(
     (next: PadMode) => {
       setGlobalMode(next); // optimistic
-      for (let pad = 0; pad < PAD_COUNT; pad++) void setPadMode(pad, next);
+      setAllPadModes(next);
     },
     [setGlobalMode],
   );

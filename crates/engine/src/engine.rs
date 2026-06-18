@@ -24,8 +24,10 @@ impl<B: Backend> Engine<B> {
 
     pub fn set_mode(&mut self, pad: PadId, mode: PlayMode) {
         // Changing a looping pad's mode must stop the voice, or it strands with
-        // no release path.
+        // no release path. Also clear the backend's loop flag so a later
+        // one-shot hit doesn't replay it as a loop.
         if self.looping.remove(&pad) {
+            self.backend.set_looping(pad, false);
             self.backend.stop(pad);
         }
         self.modes.insert(pad, mode);
@@ -67,10 +69,12 @@ impl<B: Backend> Engine<B> {
         let pad = event.pad;
         match (self.mode(pad), event.phase) {
             (PlayMode::OneShot, Phase::Press) => {
-                // A one-shot chokes any loop on this pad, so drop its loop state.
-                self.backend.set_looping(pad, false);
+                // A one-shot chokes any loop on this pad, so drop its loop state
+                // (set_mode already cleared it in the common path).
+                if self.looping.remove(&pad) {
+                    self.backend.set_looping(pad, false);
+                }
                 self.backend.play(pad, event.velocity);
-                self.looping.remove(&pad);
             }
             (PlayMode::HoldLoop, Phase::Press) => self.start_loop(pad, event.velocity),
             (PlayMode::HoldLoop, Phase::Release) => self.stop_loop(pad),
@@ -161,7 +165,8 @@ mod tests {
         let mut engine = Engine::new(MockBackend::default());
         engine.handle_event(press(0));
         engine.handle_event(release(0));
-        assert_eq!(engine.backend_mut().calls, ["loop 0 false", "play 0"]);
+        // No prior loop, so no redundant set_looping before the hit.
+        assert_eq!(engine.backend_mut().calls, ["play 0"]);
         assert!(!engine.is_looping(PadId(0)));
     }
 

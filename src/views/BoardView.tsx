@@ -8,10 +8,11 @@ import {
   type PadId,
   type PadMode,
 } from "@/model/domain/pad";
-import type { PadVm } from "@/presenters/usePadGrid";
+import { cn } from "@/lib/utils";
+import type { PadVm } from "@/presenters/padVm";
 import { BankToggle } from "./BankToggle";
-import { ControlCell } from "./ControlCell";
 import { PadView } from "./PadView";
+import { ROUND_CONTROL, RoundControl } from "./RoundControl";
 
 const COLS = GRID.cols + 1; // 9: beats + right lane
 const ROWS = GRID.rows + 1; // 9: top lane + beats
@@ -41,10 +42,7 @@ interface Props {
 
 function reservedDot(key: string): ReactNode {
   return (
-    <div
-      key={key}
-      className="aspect-square size-[78%] place-self-center rounded-full border border-border bg-muted/30"
-    />
+    <div key={key} className={cn(ROUND_CONTROL, "border-border bg-muted/30")} />
   );
 }
 
@@ -118,14 +116,15 @@ export function BoardView({
         const m = PAD_MODES[modeIndex];
         const Icon = MODE_ICON[m.id];
         cells.push(
-          <ControlCell
+          <RoundControl
             key={`mode-${m.id}`}
             active={mode === m.id}
             title={`${m.label} (all pads)`}
+            label={`${m.label} — apply to all pads`}
             onClick={() => onSetGlobalMode(m.id)}
           >
             <Icon className="size-[45%]" />
-          </ControlCell>,
+          </RoundControl>,
         );
         continue;
       }

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { PAD_MODES, type PadId, type PadMode } from "@/model/domain/pad";
-import type { PadVm } from "@/presenters/usePadGrid";
+import type { PadVm } from "@/presenters/padVm";
 
 interface Props {
   pad: PadVm;
@@ -48,6 +48,9 @@ export function PadView({
       <ContextMenuTrigger asChild>
         <button
           type="button"
+          // Played via pointer or the global keyboard handler, not Tab focus.
+          tabIndex={-1}
+          aria-label={`Pad ${pad.id + 1}`}
           onPointerDown={press}
           onPointerUp={release}
           onPointerLeave={release}

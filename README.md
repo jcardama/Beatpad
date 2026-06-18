@@ -55,7 +55,7 @@ Builds will be published on the [Releases](https://github.com/jcardama/Beatpad/r
 
 ## Quick Start (from source)
 
-Prerequisites: [Node 20+](https://nodejs.org) with [pnpm](https://pnpm.io), the [Rust toolchain](https://rustup.rs), and the [Tauri v2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. On Debian/Ubuntu that's `libwebkit2gtk-4.1-dev`, `libasound2-dev`, and the usual build tools.
+Prerequisites: [Node 24+](https://nodejs.org) with [pnpm](https://pnpm.io), the [Rust toolchain](https://rustup.rs), and the [Tauri v2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. On Debian/Ubuntu that's `libwebkit2gtk-4.1-dev`, `libasound2-dev`, and the usual build tools.
 
 ```bash
 git clone https://github.com/jcardama/Beatpad.git

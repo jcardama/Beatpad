@@ -1,5 +1,6 @@
 import type { Bank } from "@/model/domain/pad";
 import { BankIcon } from "./BankIcon";
+import { RoundControl } from "./RoundControl";
 
 interface Props {
   bank: Bank;
@@ -11,14 +12,14 @@ interface Props {
  * via [`BankIcon`]; click or Tab flips it.
  */
 export function BankToggle({ bank, onToggle }: Props) {
+  const half = bank === "top" ? "Top" : "Bottom";
   return (
-    <button
-      type="button"
-      title={`${bank === "top" ? "Top" : "Bottom"} half active — Tab to switch`}
+    <RoundControl
+      title={`${half} half active — Tab to switch`}
+      label={`Switch bank (${half} half active)`}
       onClick={onToggle}
-      className="flex aspect-square size-[78%] select-none items-center justify-center place-self-center rounded-full border border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
     >
       <BankIcon bank={bank} />
-    </button>
+    </RoundControl>
   );
 }

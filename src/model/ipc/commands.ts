@@ -1,4 +1,4 @@
-import type { PadId, PadMode } from "@/model/domain/pad";
+import { PAD_COUNT, type PadId, type PadMode } from "@/model/domain/pad";
 import type { Theme } from "@/model/domain/theme";
 import { ipc } from "./client";
 
@@ -11,6 +11,11 @@ export const releasePad = (pad: PadId): Promise<void> =>
 
 export const setPadMode = (pad: PadId, mode: PadMode): Promise<void> =>
   ipc.invoke("set_pad_mode", { pad, mode });
+
+/** Apply one play mode to every pad (the global mode selector). */
+export const setAllPadModes = (mode: PadMode): void => {
+  for (let pad = 0; pad < PAD_COUNT; pad++) void setPadMode(pad, mode);
+};
 
 /** Load (or replace) a single pad's sound from a file on disk. */
 export const loadPadSound = (pad: PadId, path: string): Promise<void> =>

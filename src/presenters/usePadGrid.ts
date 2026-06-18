@@ -1,27 +1,11 @@
 import { useCallback } from "react";
 
 import { padLabel } from "@/model/domain/keybindings";
-import {
-  PAD_COUNT,
-  padBank,
-  type Bank,
-  type PadId,
-  type PadMode,
-} from "@/model/domain/pad";
+import { PAD_COUNT, padBank, type PadId } from "@/model/domain/pad";
 import { releasePad, triggerPad } from "@/model/ipc/commands";
 import { useKeybindingsStore } from "@/model/store/keybindingsStore";
 import { useTransportStore } from "@/model/store/transportStore";
-
-/** View-model for a single pad. */
-export interface PadVm {
-  id: PadId;
-  label: string;
-  bank: Bank;
-  lit: boolean;
-  looping: boolean;
-  loaded: boolean;
-  mode: PadMode;
-}
+import type { PadVm } from "./padVm";
 
 /**
  * Presentation logic for the pad grid: shapes domain state into pad
@@ -38,7 +22,7 @@ export function usePadGrid() {
 
   const press = useCallback(
     (pad: PadId) => {
-      setLit(pad, true); // optimistic: light immediately
+      setLit(pad, true); // optimistic
       void triggerPad(pad);
     },
     [setLit],

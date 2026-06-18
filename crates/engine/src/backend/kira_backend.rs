@@ -24,6 +24,8 @@ pub struct KiraTrack {
 
 impl Track for KiraTrack {
     fn trigger(&mut self, _velocity: u8) {
+        // Velocity is intentionally inert until MIDI input lands; keyboard hits
+        // are fixed-velocity, so there's nothing to map onto volume yet.
         // Monophonic per pad: stop any voice still playing (notably a running
         // loop) before starting a new one, so voices are never orphaned.
         if let Some(handle) = self.handle.as_mut() {

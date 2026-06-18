@@ -2,8 +2,6 @@ mod commands;
 mod input;
 mod state;
 
-use std::sync::Mutex;
-
 use state::AppState;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Manager, Wry};
@@ -15,9 +13,6 @@ const URL_CHANGELOG: &str = "https://github.com/jcardama/Beatpad/blob/main/CHANG
 const URL_LICENSE: &str = "https://github.com/jcardama/Beatpad/blob/main/LICENSE";
 const URL_RELEASES: &str = "https://github.com/jcardama/Beatpad/releases";
 const URL_FACEBOOK: &str = "https://www.facebook.com/beatxpad";
-
-/// Tracks the "Always on Top" toggle (kept in sync with the menu's checkbox).
-struct AlwaysOnTop(Mutex<bool>);
 
 /// Menu items whose enabled state changes at runtime (greyed when the board is
 /// empty).
@@ -44,7 +39,6 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
-        .manage(AlwaysOnTop(Mutex::new(false)))
         .setup(|app| {
             app.manage(AppState::spawn(app.handle().clone()));
             fit_window_square(app);
@@ -205,11 +199,10 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
             let _ = app.emit("menu:theme", "light");
         }
         "always_on_top" => {
-            let state = app.state::<AlwaysOnTop>();
-            let mut on = state.0.lock().unwrap();
-            *on = !*on;
+            // The CheckMenuItem owns the toggle state; mirror it onto the window.
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.set_always_on_top(*on);
+                let on = window.is_always_on_top().unwrap_or(false);
+                let _ = window.set_always_on_top(!on);
             }
         }
         "win_minimize" => {
@@ -253,7 +246,8 @@ fn set_board_enabled(enabled: bool, items: tauri::State<MenuItems>) {
 }
 
 /// Size the window to a square that fits the display (capped to an arbitrary
-/// max), so the board never clips and stays square on small screens.
+/// max), so the board never clips and stays square on small screens. Window
+/// geometry is intentionally not persisted — every launch recomputes the square.
 fn fit_window_square(app: &tauri::App) {
     let Some(window) = app.get_webview_window("main") else {
         return;

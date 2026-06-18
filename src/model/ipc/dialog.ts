@@ -1,10 +1,5 @@
 import { message, open } from "@tauri-apps/plugin-dialog";
 
-/** Placeholder for not-yet-built features reached from the menu. */
-export const showComingSoon = async (what: string): Promise<void> => {
-  await message(`${what} is coming soon.`, { title: "BeatPad", kind: "info" });
-};
-
 /** Surface an error to the user via a native dialog. */
 export const showError = async (msg: string): Promise<void> => {
   await message(msg, { title: "BeatPad", kind: "error" });

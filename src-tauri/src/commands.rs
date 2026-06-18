@@ -136,3 +136,32 @@ fn format_mode_str(mode: format::PadMode) -> &'static str {
         format::PadMode::ToggleLoop => "toggle_loop",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_mode_maps_known_strings_and_defaults_to_one_shot() {
+        assert!(matches!(parse_mode("hold_loop"), PlayMode::HoldLoop));
+        assert!(matches!(parse_mode("toggle_loop"), PlayMode::ToggleLoop));
+        assert!(matches!(parse_mode("one_shot"), PlayMode::OneShot));
+        assert!(matches!(parse_mode("nonsense"), PlayMode::OneShot));
+    }
+
+    #[test]
+    fn format_mode_str_round_trips_through_parse_mode() {
+        for mode in [
+            format::PadMode::OneShot,
+            format::PadMode::HoldLoop,
+            format::PadMode::ToggleLoop,
+        ] {
+            let engine_mode = from_format_mode(mode);
+            let reparsed = parse_mode(format_mode_str(mode));
+            assert_eq!(
+                std::mem::discriminant(&engine_mode),
+                std::mem::discriminant(&reparsed)
+            );
+        }
+    }
+}

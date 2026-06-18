@@ -1,10 +1,10 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import {
   padKeyCount,
   type Keybindings,
@@ -13,6 +13,7 @@ import {
 import { PAD_MODES, type PadMode } from "@/model/domain/pad";
 import { THEMES, type Theme } from "@/model/domain/theme";
 import { KeyRecorder } from "./KeyRecorder";
+import { SegmentedToggle } from "./SegmentedToggle";
 
 interface Props {
   open: boolean;
@@ -32,11 +33,10 @@ const SCHEMES: { id: KeyScheme; label: string }[] = [
   { id: "direct", label: "Direct (64)" },
 ];
 
-const THEME_LABEL: Record<Theme, string> = {
-  system: "System",
-  dark: "Dark",
-  light: "Light",
-};
+const THEME_OPTIONS: { id: Theme; label: string }[] = THEMES.map((id) => ({
+  id,
+  label: { system: "System", dark: "Dark", light: "Light" }[id],
+}));
 
 export function SettingsDialog({
   open,
@@ -56,30 +56,19 @@ export function SettingsDialog({
       <DialogContent className="max-h-[85vh] gap-6 overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
+          <DialogDescription className="sr-only">
+            Appearance and keyboard mappings.
+          </DialogDescription>
         </DialogHeader>
 
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Appearance</h3>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Theme</span>
-            <div className="inline-flex rounded-lg border border-border p-1">
-              {THEMES.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => onThemeChange(t)}
-                  className={cn(
-                    "rounded-md px-3 py-1 text-sm transition-colors",
-                    theme === t
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {THEME_LABEL[t]}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SegmentedToggle
+            label="Theme"
+            options={THEME_OPTIONS}
+            value={theme}
+            onChange={onThemeChange}
+          />
         </section>
 
         <section className="space-y-4">
@@ -93,26 +82,12 @@ export function SettingsDialog({
               Reset to defaults
             </button>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Key layout</span>
-            <div className="inline-flex rounded-lg border border-border p-1">
-              {SCHEMES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => onSetScheme(s.id)}
-                  className={cn(
-                    "rounded-md px-3 py-1 text-sm transition-colors",
-                    keybindings.scheme === s.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SegmentedToggle
+            label="Key layout"
+            options={SCHEMES}
+            value={keybindings.scheme}
+            onChange={onSetScheme}
+          />
 
           <p className="text-xs text-muted-foreground">
             {banked
