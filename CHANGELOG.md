@@ -21,10 +21,13 @@ All notable changes to BeatPad are documented here. The format follows
 - Board persistence: per-pad assigned sounds and modes are saved and replayed on startup (missing files are dropped silently).
 - Automatic update check: polls GitHub Releases on startup and once a day, plus a **Check for Updates** menu item, surfacing the result in-app (no redirect) with an opt-in to open the releases page.
 - In-app toast notifications: update results and sample/pack load failures surface as themed, auto-dismissing toasts instead of native OS dialogs.
+- Save / Save As: export the current board to a `.beat` archive (the round-trip for the existing import). **Save** writes to the bound file, **Save As** prompts; both are greyed until the board has content.
+- An editable **Author** setting, seeded once from the OS login name (never the real name, to avoid leaking PII) and stamped into saved packs.
 
 ### Changed
 - Grew the grid from the original 4×4 scaffold to 8×8; reverted the custom titlebar to the native OS titlebar + menu.
 - Theme, language, and keybindings follow the OS by default and persist via the store plugin.
+- The native menu-bar visibility (Alt toggle) now persists across restarts.
 - Refined the visual language: a tighter, weight-led type scale (ported from the Spotify Mobile kit, rendered in Geist) over a brand-anchored palette — `#333` ink as light-mode text and the dark surface family, with `#277bb2` as the sole accent.
 - The About dialog and update check read the version from the build (`CARGO_PKG_VERSION`) rather than a hardcoded string.
 - Updated dependencies: `zip` 8, `@vitejs/plugin-react` 5, TypeScript 6, and the CI GitHub Actions (v6); CI now runs with `--locked`.
@@ -36,6 +39,8 @@ All notable changes to BeatPad are documented here. The format follows
 - Changing a looping pad's mode stops the voice instead of stranding it; one-shot hits skip a redundant loop reset.
 - Keyboard autorepeat no longer floods the engine with IPC, and key events are ignored while typing in inputs.
 - The BeatPad window icon is applied at runtime, so Linux/WSLg shows it in the taskbar instead of a generic placeholder.
+- The window opens square so the board fills it from the start (scale-independent sizing fixes a wide-but-short launch on some displays).
+- The settings dialog scrolls within its padded area, keeping the native scrollbar's arrows clear of the dialog's rounded corners; scrollbars are slimmed and theme-tinted app-wide.
 
 ### Security
 - Set a restrictive Content-Security-Policy and removed the unused `opener` capability.
