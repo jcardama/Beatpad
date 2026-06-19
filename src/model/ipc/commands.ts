@@ -35,8 +35,27 @@ export const loadBeatPack = (path: string): Promise<LoadedPad[]> =>
 export const clearPad = (pad: PadId): Promise<void> =>
   ipc.invoke("clear_pad", { pad });
 
-/** Show/hide the native menu bar (Alt toggle). */
-export const toggleMenu = (): Promise<void> => ipc.invoke("toggle_menu");
+/** Manifest fields supplied when saving a board to a `.beat`. */
+export interface SaveMeta {
+  name: string;
+  author: string;
+  bpm: number;
+}
+
+/** Write the current board to a `.beat` archive. `modes` is indexed by pad. */
+export const saveBeat = (
+  path: string,
+  meta: SaveMeta,
+  modes: PadMode[],
+): Promise<void> => ipc.invoke("save_beat", { path, meta, modes });
+
+/** The OS account login name — the default (editable) pack author. */
+export const systemUsername = (): Promise<string> =>
+  ipc.invoke<string>("system_username");
+
+/** Show or hide the native menu bar (the UI owns + persists the state). */
+export const setMenuBarVisible = (visible: boolean): Promise<void> =>
+  ipc.invoke("set_menu_visible", { visible });
 
 /** Enable/disable the board-dependent menu items (File → Close, Edit → Clear). */
 export const setBoardEnabled = (enabled: boolean): Promise<void> =>
@@ -90,6 +109,12 @@ export const onUpdateAvailable = (handler: (latest: string) => void) =>
 /** Native menu events. */
 export const onMenuOpenPack = (handler: () => void) =>
   ipc.listen<null>("menu:open-pack", () => handler());
+
+export const onMenuSave = (handler: () => void) =>
+  ipc.listen<null>("menu:save", () => handler());
+
+export const onMenuSaveAs = (handler: () => void) =>
+  ipc.listen<null>("menu:save-as", () => handler());
 
 export const onMenuCheckUpdates = (handler: () => void) =>
   ipc.listen<null>("menu:check-updates", () => handler());

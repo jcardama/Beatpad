@@ -157,4 +157,13 @@
     height: 100%;
     overflow: hidden;
     }
+
+  /* Slim, theme-tinted scrollbars. WebView2 renders its own (Fluent) bar that
+     ignores `::-webkit-scrollbar`, so we only nudge width/colour here and keep
+     the bar clear of rounded corners by insetting the scroll areas themselves. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 30%, transparent)
+      transparent;
+    }
 }

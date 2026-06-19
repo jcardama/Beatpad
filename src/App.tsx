@@ -1,4 +1,5 @@
 import { useBank } from "@/presenters/useBank";
+import { useBeatFile } from "@/presenters/useBeatFile";
 import { useBoardMenuSync } from "@/presenters/useBoardMenuSync";
 import { useDocumentLang } from "@/presenters/useDocumentLang";
 import { useKeybindings } from "@/presenters/useKeybindings";
@@ -41,6 +42,7 @@ function App() {
   useMenuToggle();
   useBoardMenuSync();
   useUpdateCheck();
+  useBeatFile();
 
   return (
     <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-3">
@@ -70,6 +72,8 @@ function App() {
         onThemeChange={settings.setTheme}
         locale={settings.locale}
         onLocaleChange={settings.setLocale}
+        author={settings.author}
+        onAuthorChange={settings.setAuthor}
         keybindings={keys.keybindings}
         onSetScheme={keys.setScheme}
         onAssignPadKey={keys.assignPadKey}

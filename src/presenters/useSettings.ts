@@ -9,5 +9,7 @@ export function useSettings() {
   const setTheme = useSettingsStore((s) => s.setTheme);
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
-  return { open, setOpen, theme, setTheme, locale, setLocale };
+  const author = useSettingsStore((s) => s.author);
+  const setAuthor = useSettingsStore((s) => s.setAuthor);
+  return { open, setOpen, theme, setTheme, locale, setLocale, author, setAuthor };
 }

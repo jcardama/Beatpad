@@ -24,6 +24,8 @@ interface Props {
   onThemeChange: (theme: Theme) => void;
   locale: Locale;
   onLocaleChange: (locale: Locale) => void;
+  author: string;
+  onAuthorChange: (author: string) => void;
   keybindings: Keybindings;
   onSetScheme: (scheme: KeyScheme) => void;
   onAssignPadKey: (index: number, code: string) => void;
@@ -39,6 +41,8 @@ export function SettingsDialog({
   onThemeChange,
   locale,
   onLocaleChange,
+  author,
+  onAuthorChange,
   keybindings,
   onSetScheme,
   onAssignPadKey,
@@ -59,8 +63,8 @@ export function SettingsDialog({
   }));
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] gap-6 overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden sm:max-w-lg">
+        <DialogHeader className="pb-4">
           <DialogTitle className="type-title">
             {t((m) => m.settings.title)}
           </DialogTitle>
@@ -69,6 +73,11 @@ export function SettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Scrollbar sits flush at the right edge but is inset top (header) and
+            bottom (the dialog's p-4), so its arrows clear the rounded corners
+            without horizontal spacing. `-mr-4` reaches the edge; `pr-4` keeps
+            the content off the scrollbar. */}
+        <div className="-mr-4 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto pr-4">
         <section className="space-y-3">
           <h3 className="type-heading">{t((m) => m.settings.appearance)}</h3>
           <SegmentedToggle
@@ -83,6 +92,18 @@ export function SettingsDialog({
             value={locale}
             onChange={onLocaleChange}
           />
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="author" className="text-sm text-muted-foreground">
+              {t((m) => m.settings.author)}
+            </label>
+            <input
+              id="author"
+              type="text"
+              value={author}
+              onChange={(e) => onAuthorChange(e.target.value)}
+              className="w-44 rounded-md border border-border bg-transparent px-2.5 py-1 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </section>
 
         <section className="space-y-4">
@@ -153,6 +174,7 @@ export function SettingsDialog({
             </div>
           ))}
         </section>
+        </div>
       </DialogContent>
     </Dialog>
   );

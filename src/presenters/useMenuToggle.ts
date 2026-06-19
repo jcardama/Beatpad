@@ -1,16 +1,23 @@
 import { useEffect } from "react";
 
-import { toggleMenu } from "@/model/ipc/commands";
+import { setMenuBarVisible } from "@/model/ipc/commands";
 import { useSettingsStore } from "@/model/store/settingsStore";
 
 /**
  * Toggles the native menu bar on an Alt *tap* (press + release with nothing in
  * between), matching the common Windows/Linux convention. Alt used as part of a
  * shortcut does not toggle. Disabled while settings is open (so Alt can be
- * rebound).
+ * rebound). The visibility lives in the store (persisted) and is mirrored onto
+ * the native menu here, so it survives restarts.
  */
 export function useMenuToggle(): void {
   const settingsOpen = useSettingsStore((s) => s.open);
+  const menuVisible = useSettingsStore((s) => s.menuVisible);
+
+  // Mirror the (persisted) visibility onto the native menu bar.
+  useEffect(() => {
+    void setMenuBarVisible(menuVisible);
+  }, [menuVisible]);
 
   useEffect(() => {
     if (settingsOpen) return;
@@ -31,7 +38,10 @@ export function useMenuToggle(): void {
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Alt") {
-        if (altHeld && !usedChord) void toggleMenu();
+        if (altHeld && !usedChord) {
+          const s = useSettingsStore.getState();
+          s.setMenuVisible(!s.menuVisible);
+        }
         altHeld = false;
         e.preventDefault();
       }

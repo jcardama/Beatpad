@@ -55,6 +55,7 @@ export const es: Messages = {
     padsOneBank: "Pads (una mitad)",
     pads: "Pads",
     switchBank: "Cambiar banco",
+    author: "Autor",
   },
   keyRecorder: {
     recording: "Pulsa una tecla… (Esc para cancelar)",
@@ -66,6 +67,8 @@ export const es: Messages = {
     loadPackError: (error) => `No se pudo cargar ese pack.\n${error}`,
     soundLoadFailed: (pad, error) =>
       `Pad ${pad}: no se pudo reproducir ese sonido.\n${error}`,
+    saved: "Guardado.",
+    saveError: (error) => `No se pudo guardar ese pack.\n${error}`,
   },
   update: {
     available: (version) => `BeatPad v${version} ya está disponible.`,

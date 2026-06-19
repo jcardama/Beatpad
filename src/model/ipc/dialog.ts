@@ -1,4 +1,13 @@
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+
+/** Native save dialog for a `.beat` pack. Returns the chosen path, or null. */
+export async function pickSaveBeat(defaultPath?: string): Promise<string | null> {
+  const result = await save({
+    defaultPath,
+    filters: [{ name: "Beat pack", extensions: ["beat"] }],
+  });
+  return result ?? null;
+}
 
 /** Native file picker for a single audio sample. Returns the path, or null. */
 export async function pickSoundFile(): Promise<string | null> {

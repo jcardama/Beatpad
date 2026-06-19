@@ -1,9 +1,11 @@
+use std::collections::BTreeMap;
+
 use engine::{PadId, Phase, PlayMode};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::input::pad_event;
-use crate::state::{AppState, AudioCmd, PackEntry, PAD_COUNT};
+use crate::state::{AppState, AudioCmd, PackEntry, SampleStore, PAD_COUNT};
 
 /// What a `.beat` pack filled: a pad plus the mode the pack assigned it, so the
 /// UI can reflect per-pad modes after loading.
@@ -47,23 +49,34 @@ pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
 
 /// Load (or replace) the sound on a single pad from a file on disk.
 #[tauri::command]
-pub fn load_pad_sound(pad: u16, path: String, state: State<AppState>) -> Result<(), String> {
+pub fn load_pad_sound(
+    pad: u16,
+    path: String,
+    state: State<AppState>,
+    samples: State<SampleStore>,
+) -> Result<(), String> {
     if pad >= PAD_COUNT {
         return Err("pad out of range".into());
     }
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    samples.set(pad, file_name(&path), bytes.clone());
     state.send(AudioCmd::LoadSound(PadId(pad), bytes));
     Ok(())
 }
 
 /// Load a `.beat` pack, replacing the board. Returns each filled pad + its mode.
 #[tauri::command]
-pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<LoadedPad>, String> {
+pub fn load_beat_pack(
+    path: String,
+    state: State<AppState>,
+    samples: State<SampleStore>,
+) -> Result<Vec<LoadedPad>, String> {
     let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
     let beat = format::read_beat(file).map_err(|e| e.to_string())?;
 
     let mut entries = Vec::new();
     let mut loaded = Vec::new();
+    let mut cached = Vec::new();
     for mapping in &beat.manifest.pads {
         if mapping.pad >= PAD_COUNT {
             log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
@@ -80,6 +93,7 @@ pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<Loaded
                     pad: mapping.pad,
                     mode: format_mode_str(mapping.mode).to_string(),
                 });
+                cached.push((mapping.pad, mapping.sample.clone(), bytes.clone()));
             }
             None => log::warn!(
                 "pack pad {} references missing sample '{}'; skipped",
@@ -89,27 +103,98 @@ pub fn load_beat_pack(path: String, state: State<AppState>) -> Result<Vec<Loaded
         }
     }
 
+    // The pack replaces the board, so the save cache is rebuilt to match — only
+    // once we know the load is worth applying (a non-empty result).
+    if !cached.is_empty() {
+        samples.clear();
+        for (pad, name, bytes) in cached {
+            samples.set(pad, name, bytes);
+        }
+    }
+
     state.send(AudioCmd::LoadPack(entries));
     Ok(loaded)
 }
 
 /// Remove the sound from a single pad.
 #[tauri::command]
-pub fn clear_pad(pad: u16, state: State<AppState>) {
+pub fn clear_pad(pad: u16, state: State<AppState>, samples: State<SampleStore>) {
     if pad >= PAD_COUNT {
         return;
     }
+    samples.remove(pad);
     state.send(AudioCmd::Clear(PadId(pad)));
 }
 
-/// Show/hide the native menu bar (bound to Alt; the bar is hidden by default).
+/// Manifest fields the UI supplies when saving a board to a `.beat`.
+#[derive(Deserialize)]
+pub struct SaveMeta {
+    name: String,
+    author: String,
+    bpm: f32,
+}
+
+/// Write the current board to a `.beat` archive. `modes` is indexed by pad
+/// (the UI owns per-pad modes); sample bytes come from the save cache.
 #[tauri::command]
-pub fn toggle_menu(window: tauri::WebviewWindow) {
-    let visible = window.is_menu_visible().unwrap_or(false);
+pub fn save_beat(
+    path: String,
+    meta: SaveMeta,
+    modes: Vec<String>,
+    samples: State<SampleStore>,
+) -> Result<(), String> {
+    let store = samples.0.lock().unwrap();
+    if store.is_empty() {
+        return Err("the board is empty".into());
+    }
+
+    let mut sample_bytes = BTreeMap::new();
+    let mut pads = Vec::new();
+    for (&pad, entry) in store.iter() {
+        // Prefix with the pad index so two pads can carry same-named files.
+        let sample = format!("{pad}_{}", entry.name);
+        sample_bytes.insert(sample.clone(), entry.bytes.clone());
+        let mode = modes
+            .get(pad as usize)
+            .map(|m| to_format_mode(m))
+            .unwrap_or(format::PadMode::OneShot);
+        pads.push(format::PadMapping { pad, sample, mode });
+    }
+
+    let manifest = format::Manifest {
+        format_version: format::CURRENT_FORMAT_VERSION,
+        name: meta.name,
+        author: meta.author,
+        bpm: meta.bpm,
+        grid: format::GridSize { rows: 8, cols: 8 },
+        pads,
+        metadata: BTreeMap::new(),
+    };
+    let beat = format::Beat {
+        manifest,
+        samples: sample_bytes,
+    };
+    let file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    format::write_beat(file, &beat).map_err(|e| e.to_string())
+}
+
+/// The trailing file name of a path, for naming samples inside the archive.
+fn file_name(path: &str) -> String {
+    std::path::Path::new(path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("sample")
+        .to_string()
+}
+
+/// Show or hide the native menu bar. The UI owns the visibility state (toggled
+/// by Alt) and persists it, so this just applies the requested value.
+#[tauri::command]
+pub fn set_menu_visible(window: tauri::WebviewWindow, visible: bool) {
     let _ = if visible {
-        window.hide_menu()
-    } else {
         window.show_menu()
+    } else {
+        window.hide_menu()
     };
 }
 
@@ -126,6 +211,14 @@ fn from_format_mode(mode: format::PadMode) -> PlayMode {
         format::PadMode::HoldLoop => PlayMode::HoldLoop,
         format::PadMode::ToggleLoop => PlayMode::ToggleLoop,
         format::PadMode::OneShot => PlayMode::OneShot,
+    }
+}
+
+fn to_format_mode(mode: &str) -> format::PadMode {
+    match mode {
+        "hold_loop" => format::PadMode::HoldLoop,
+        "toggle_loop" => format::PadMode::ToggleLoop,
+        _ => format::PadMode::OneShot,
     }
 }
 
@@ -147,6 +240,23 @@ mod tests {
         assert!(matches!(parse_mode("toggle_loop"), PlayMode::ToggleLoop));
         assert!(matches!(parse_mode("one_shot"), PlayMode::OneShot));
         assert!(matches!(parse_mode("nonsense"), PlayMode::OneShot));
+    }
+
+    #[test]
+    fn to_format_mode_maps_known_strings_and_defaults() {
+        assert!(matches!(
+            to_format_mode("hold_loop"),
+            format::PadMode::HoldLoop
+        ));
+        assert!(matches!(
+            to_format_mode("toggle_loop"),
+            format::PadMode::ToggleLoop
+        ));
+        assert!(matches!(
+            to_format_mode("one_shot"),
+            format::PadMode::OneShot
+        ));
+        assert!(matches!(to_format_mode("???"), format::PadMode::OneShot));
     }
 
     #[test]

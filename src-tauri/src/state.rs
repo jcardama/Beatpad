@@ -1,3 +1,6 @@
+use std::collections::BTreeMap;
+use std::sync::Mutex;
+
 use crossbeam_channel::{unbounded, Sender};
 use engine::{Engine, KiraBackend, PadEvent, PadId, PlayMode};
 use serde::Serialize;
@@ -5,6 +8,34 @@ use tauri::{AppHandle, Emitter};
 
 /// Number of pads (8×8 grid, played as two banks of 4 rows).
 pub const PAD_COUNT: u16 = 64;
+
+/// One pad's saved sample: its file name plus the raw encoded bytes.
+pub struct SampleEntry {
+    pub name: String,
+    pub bytes: Vec<u8>,
+}
+
+/// Byte cache of the loaded samples, keyed by pad — the document model used to
+/// write the board back to a `.beat`. The audio thread keeps only *decoded*
+/// audio, so the raw bytes for serialization live here. Held behind a `Mutex`
+/// in Tauri state; this is NOT the audio engine (which stays on its own thread).
+#[derive(Default)]
+pub struct SampleStore(pub Mutex<BTreeMap<u16, SampleEntry>>);
+
+impl SampleStore {
+    pub fn set(&self, pad: u16, name: String, bytes: Vec<u8>) {
+        self.0
+            .lock()
+            .unwrap()
+            .insert(pad, SampleEntry { name, bytes });
+    }
+    pub fn remove(&self, pad: u16) {
+        self.0.lock().unwrap().remove(&pad);
+    }
+    pub fn clear(&self) {
+        self.0.lock().unwrap().clear();
+    }
+}
 
 /// One pad's entry in a loaded sample pack.
 pub struct PackEntry {

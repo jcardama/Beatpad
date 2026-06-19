@@ -25,6 +25,7 @@ crossbeam-channel = "0.5"
 log = "0.4"
 ureq = { version = "2", default-features = false, features = ["tls"] }
 semver = "1"
+whoami = "1"
 engine = { path = "../crates/engine" }
 format = { path = "../crates/format" }
 tauri-plugin-log = "2"

@@ -3,7 +3,7 @@ mod input;
 mod state;
 mod update_check;
 
-use state::AppState;
+use state::{AppState, SampleStore};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Manager, Wry};
 use tauri_plugin_dialog::DialogExt;
@@ -19,6 +19,8 @@ const URL_FACEBOOK: &str = "https://www.facebook.com/beatxpad";
 struct MenuItems {
     close: MenuItem<Wry>,
     clear: MenuItem<Wry>,
+    save: MenuItem<Wry>,
+    save_as: MenuItem<Wry>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -39,6 +41,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
+        .manage(SampleStore::default())
         .setup(|app| {
             app.manage(AppState::spawn(app.handle().clone()));
             update_check::spawn_update_checker(app.handle().clone());
@@ -51,8 +54,9 @@ pub fn run() {
                 if let Some(icon) = app.default_window_icon() {
                     let _ = window.set_icon(icon.clone());
                 }
-                // Auto-hide the in-window menu bar; Alt toggles it (see
-                // `toggle_menu`). macOS uses the global menu bar, so skip it.
+                // Hide the in-window menu bar initially; the UI restores the
+                // persisted visibility (see `set_menu_visible`) and Alt toggles
+                // it. macOS uses the global menu bar, so skip it there.
                 #[cfg(not(target_os = "macos"))]
                 let _ = window.hide_menu();
             }
@@ -66,10 +70,12 @@ pub fn run() {
             commands::load_pad_sound,
             commands::load_beat_pack,
             commands::clear_pad,
-            commands::toggle_menu,
+            commands::save_beat,
+            commands::set_menu_visible,
             set_board_enabled,
             check_for_updates,
-            open_releases_page
+            open_releases_page,
+            system_username
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -102,7 +108,10 @@ fn build_menu(app: &tauri::App) -> tauri::Result<Menu<Wry>> {
         ],
     )?;
 
-    // Close/Clear are disabled until a pack/sound is loaded (see `set_board_enabled`).
+    // Save/Close/Clear are disabled until the board has content (see
+    // `set_board_enabled`).
+    let save = MenuItem::with_id(app, "save", "Save", false, Some("CmdOrCtrl+S"))?;
+    let save_as = MenuItem::with_id(app, "save_as", "Save As…", false, Some("CmdOrCtrl+Shift+S"))?;
     let close = MenuItem::with_id(app, "close_pack", "Close", false, Some("CmdOrCtrl+W"))?;
     let file = Submenu::with_items(
         app,
@@ -110,6 +119,9 @@ fn build_menu(app: &tauri::App) -> tauri::Result<Menu<Wry>> {
         true,
         &[
             &MenuItem::with_id(app, "open_pack", "Open…", true, Some("CmdOrCtrl+O"))?,
+            &save,
+            &save_as,
+            &PredefinedMenuItem::separator(app)?,
             &close,
         ],
     )?;
@@ -117,7 +129,12 @@ fn build_menu(app: &tauri::App) -> tauri::Result<Menu<Wry>> {
     let clear = MenuItem::with_id(app, "clear_board", "Clear", false, None::<&str>)?;
     let edit = Submenu::with_items(app, "Edit", true, &[&clear])?;
 
-    app.manage(MenuItems { close, clear });
+    app.manage(MenuItems {
+        close,
+        clear,
+        save,
+        save_as,
+    });
 
     let theme = Submenu::with_items(
         app,
@@ -201,6 +218,12 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "open_pack" => {
             let _ = app.emit("menu:open-pack", ());
         }
+        "save" => {
+            let _ = app.emit("menu:save", ());
+        }
+        "save_as" => {
+            let _ = app.emit("menu:save-as", ());
+        }
         "close_pack" | "clear_board" => {
             let _ = app.emit("menu:clear-board", ());
         }
@@ -258,6 +281,8 @@ fn open_url(app: &AppHandle, url: &str) {
 fn set_board_enabled(enabled: bool, items: tauri::State<MenuItems>) {
     let _ = items.close.set_enabled(enabled);
     let _ = items.clear.set_enabled(enabled);
+    let _ = items.save.set_enabled(enabled);
+    let _ = items.save_as.set_enabled(enabled);
 }
 
 /// Check GitHub for a newer release (off the UI thread). The frontend decides
@@ -275,18 +300,36 @@ fn open_releases_page(app: AppHandle) {
     open_url(&app, update_check::RELEASES_PAGE_URL);
 }
 
-/// Size the window to a square that fits the display (capped to an arbitrary
-/// max), so the board never clips and stays square on small screens. Window
-/// geometry is intentionally not persisted — every launch recomputes the square.
+/// The OS account login name — a non-identifying default for the pack author,
+/// editable in Settings (never the real name, to avoid leaking PII on share).
+#[tauri::command]
+fn system_username() -> String {
+    whoami::username()
+}
+
+/// Size the window so the *content area* is square — the board fills it with no
+/// side margins. Worked in physical pixels because `scale_factor()` is
+/// unreliable during `setup()` (it can report 1.0 before the window lands on its
+/// monitor), which otherwise leaves the window wide-but-short. Geometry is
+/// intentionally not persisted — every launch recomputes the square.
 fn fit_window_square(app: &tauri::App) {
     let Some(window) = app.get_webview_window("main") else {
         return;
     };
-    let Ok(Some(monitor)) = window.current_monitor() else {
-        return;
+    let monitor = match window.current_monitor() {
+        Ok(Some(m)) => m,
+        _ => match window.primary_monitor() {
+            Ok(Some(m)) => m,
+            _ => return,
+        },
     };
-    let size = monitor.size().to_logical::<f64>(monitor.scale_factor());
-    let side = (size.width.min(size.height) * 0.85).clamp(480.0, 860.0);
-    let _ = window.set_size(tauri::LogicalSize::new(side, side));
+    // `set_size` sets the client (webview) size, so a square here fills the
+    // board with no margins. Physical px sidesteps the unreliable setup-time
+    // scale; the square fits the shorter screen dimension with headroom for the
+    // taskbar and titlebar.
+    let phys = monitor.size();
+    let shorter = phys.width.min(phys.height) as f64;
+    let side = (shorter * 0.82).clamp(480.0, 1100.0) as u32;
+    let _ = window.set_size(tauri::PhysicalSize::new(side, side));
     let _ = window.center();
 }

@@ -8,6 +8,7 @@ import {
   setPadMode,
 } from "@/model/ipc/commands";
 import { pickBeatPack, pickSoundFile } from "@/model/ipc/dialog";
+import { useBeatFileStore } from "@/model/store/beatFileStore";
 import { useToastStore } from "@/model/store/toastStore";
 import { useTransportStore } from "@/model/store/transportStore";
 import { useT } from "@/presenters/useT";
@@ -22,6 +23,7 @@ export function usePadActions() {
   const resetModes = useTransportStore((s) => s.resetModes);
   const setPath = useTransportStore((s) => s.setPath);
   const resetPaths = useTransportStore((s) => s.resetPaths);
+  const setBeatPath = useBeatFileStore((s) => s.setPath);
   const toast = useToastStore((s) => s.show);
   const t = useT();
 
@@ -75,7 +77,8 @@ export function usePadActions() {
     for (let pad = 0; pad < PAD_COUNT; pad++) void clearPad(pad);
     resetModes();
     resetPaths();
-  }, [resetModes, resetPaths]);
+    setBeatPath(null); // a cleared board is a fresh, unsaved document
+  }, [resetModes, resetPaths, setBeatPath]);
 
   const loadPack = useCallback(
     () =>
@@ -91,6 +94,7 @@ export function usePadActions() {
           resetModes(); // the pack replaces the board (only after a good load)
           resetPaths();
           setModes(filled);
+          setBeatPath(path); // Save now targets the opened pack
         } catch (e) {
           toast({
             variant: "error",
@@ -98,7 +102,7 @@ export function usePadActions() {
           });
         }
       }),
-    [withDialog, resetModes, resetPaths, setModes, toast, t],
+    [withDialog, resetModes, resetPaths, setModes, setBeatPath, toast, t],
   );
 
   return { setMode, assignSound, clearSound, clearBoard, loadPack };

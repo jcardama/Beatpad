@@ -56,6 +56,7 @@ export const en = {
     padsOneBank: "Pads (one bank)",
     pads: "Pads",
     switchBank: "Switch bank",
+    author: "Author",
   },
   keyRecorder: {
     recording: "Press a key… (Esc to cancel)",
@@ -69,6 +70,8 @@ export const en = {
       `Couldn't load that pack.\n${error}`,
     soundLoadFailed: (pad: number, error: string): string =>
       `Pad ${pad}: couldn't play that sound.\n${error}`,
+    saved: "Saved.",
+    saveError: (error: string): string => `Couldn't save that pack.\n${error}`,
   },
   update: {
     available: (version: string): string => `BeatPad v${version} is available.`,
