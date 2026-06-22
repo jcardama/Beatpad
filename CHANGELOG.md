@@ -28,6 +28,7 @@ All notable changes to BeatPad are documented here. The format follows
 - Grew the grid from the original 4×4 scaffold to 8×8; reverted the custom titlebar to the native OS titlebar + menu.
 - Theme, language, and keybindings follow the OS by default and persist via the store plugin.
 - The native menu-bar visibility (Alt toggle) now persists across restarts.
+- Redesigned the Settings panel as a two-pane layout — a category sidebar (Appearance / Keybindings / Packs) beside a content pane of clean, divided rows.
 - Refined the visual language: a tighter, weight-led type scale (ported from the Spotify Mobile kit, rendered in Geist) over a brand-anchored palette — `#333` ink as light-mode text and the dark surface family, with `#277bb2` as the sole accent.
 - The About dialog and update check read the version from the build (`CARGO_PKG_VERSION`) rather than a hardcoded string.
 - Updated dependencies: `zip` 8, `@vitejs/plugin-react` 5, TypeScript 6, and the CI GitHub Actions (v6); CI now runs with `--locked`.
