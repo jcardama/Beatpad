@@ -55,8 +55,11 @@ export const en = {
       "One key per pad (for big keyboards or a MIDI Launchpad). Click a key, then press the new one. Esc cancels.",
     padsOneBank: "Pads (one bank)",
     pads: "Pads",
+    otherKeys: "Other keys",
     switchBank: "Switch bank",
     author: "Author",
+    authorHint: "Stamped into the packs you save.",
+    packs: "Packs",
   },
   keyRecorder: {
     recording: "Press a key… (Esc to cancel)",

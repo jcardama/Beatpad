@@ -54,8 +54,11 @@ export const es: Messages = {
       "Una tecla por pad (para teclados grandes o un Launchpad MIDI). Haz clic en una tecla y luego pulsa la nueva. Esc cancela.",
     padsOneBank: "Pads (una mitad)",
     pads: "Pads",
+    otherKeys: "Otras teclas",
     switchBank: "Cambiar banco",
     author: "Autor",
+    authorHint: "Se incluye en los packs que guardas.",
+    packs: "Packs",
   },
   keyRecorder: {
     recording: "Pulsa una tecla… (Esc para cancelar)",
