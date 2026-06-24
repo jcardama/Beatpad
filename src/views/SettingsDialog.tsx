@@ -34,6 +34,7 @@ interface Props {
   onAssignPadKey: (index: number, code: string) => void;
   onAssignBankKey: (code: string) => void;
   onAssignModeKey: (mode: PadMode, code: string) => void;
+  onAssignPanicKey: (code: string) => void;
   onResetKeybindings: () => void;
 }
 
@@ -73,6 +74,7 @@ export function SettingsDialog({
   onAssignPadKey,
   onAssignBankKey,
   onAssignModeKey,
+  onAssignPanicKey,
   onResetKeybindings,
 }: Props) {
   const t = useT();
@@ -230,6 +232,13 @@ export function SettingsDialog({
                         />
                       </Row>
                     )}
+                    <Row label={t((m) => m.settings.stopAll)}>
+                      <KeyRecorder
+                        code={keybindings.panicKey}
+                        onCapture={onAssignPanicKey}
+                        className="h-8 w-20"
+                      />
+                    </Row>
                     {PAD_MODES.map((id) => (
                       <Row key={id} label={t((m) => m.mode[id])}>
                         <KeyRecorder

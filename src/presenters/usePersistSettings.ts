@@ -45,7 +45,7 @@ export function usePersistSettings(): void {
         setLocale(normalizeLocale(loc));
       // First run only (null): seed the author from the OS login name (never
       // the real name). A deliberately-cleared "" is respected, not re-seeded.
-      const a = savedAuthor ?? (await systemUsername().catch(() => ""));
+      const a = savedAuthor ?? (await systemUsername().catch(() => "Unknown"));
       if (useSettingsStore.getState().author === authorAtMount) setAuthor(a);
       if (
         savedMenu != null &&

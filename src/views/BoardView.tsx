@@ -8,12 +8,11 @@ import {
   type PadId,
   type PadMode,
 } from "@/model/domain/pad";
-import { cn } from "@/lib/utils";
 import type { PadVm } from "@/presenters/padVm";
 import { useT } from "@/presenters/useT";
 import { BankToggle } from "./BankToggle";
 import { PadView } from "./PadView";
-import { ROUND_CONTROL, RoundControl } from "./RoundControl";
+import { RoundControl } from "./RoundControl";
 
 const COLS = GRID.cols + 1; // 9: beats + right lane
 const ROWS = GRID.rows + 1; // 9: top lane + beats
@@ -41,17 +40,15 @@ interface Props {
   onClear: (pad: PadId) => void;
 }
 
-function reservedDot(key: string): ReactNode {
-  return (
-    <div key={key} className={cn(ROUND_CONTROL, "border-border bg-muted/30")} />
-  );
+function spacer(key: string): ReactNode {
+  return <div key={key} />;
 }
 
 /**
  * The whole instrument as one cohesive square grid: an 8×8 beat field framed by
- * Launchpad-style round buttons. Top lane: bank toggle, load-pack, the three
- * play-mode buttons, then the logo. The right column is reserved for future
- * controls. Each pad's mode/sound is also settable from its right-click menu.
+ * the bank toggle (top-left), the play-mode buttons (right column), and the
+ * logo (top-right). Unused frame cells are left empty. Each pad's mode/sound is
+ * also settable from its right-click menu.
  */
 export function BoardView({
   pads,
@@ -95,7 +92,7 @@ export function BoardView({
           banked ? (
             <BankToggle key="bank" bank={bank} onToggle={onToggleBank} />
           ) : (
-            reservedDot("bank-empty")
+            spacer("bank-empty")
           ),
         );
         continue;
@@ -136,8 +133,7 @@ export function BoardView({
         continue;
       }
 
-      // Reserved round buttons (rest of the top lane + the right column).
-      cells.push(reservedDot(`r${r}-${c}`));
+      cells.push(spacer(`r${r}-${c}`));
     }
   }
 

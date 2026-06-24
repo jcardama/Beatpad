@@ -56,6 +56,7 @@ export const es: Messages = {
     pads: "Pads",
     otherKeys: "Otras teclas",
     switchBank: "Cambiar banco",
+    stopAll: "Detener todo",
     author: "Autor",
     authorHint: "Se incluye en los packs que guardas.",
     packs: "Packs",

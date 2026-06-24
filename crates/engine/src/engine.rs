@@ -101,6 +101,18 @@ impl<B: Backend> Engine<B> {
         self.looping.remove(&pad);
     }
 
+    /// Stop every running loop at once (panic). Returns the pads that were
+    /// looping so the caller can refresh their state.
+    pub fn stop_all(&mut self) -> Vec<PadId> {
+        let stopped: Vec<PadId> = self.looping.iter().copied().collect();
+        for &pad in &stopped {
+            self.backend.set_looping(pad, false);
+            self.backend.stop(pad);
+        }
+        self.looping.clear();
+        stopped
+    }
+
     pub fn backend_mut(&mut self) -> &mut B {
         &mut self.backend
     }
@@ -228,5 +240,20 @@ mod tests {
         engine.set_mode(PadId(0), PlayMode::ToggleLoop);
         engine.handle_event(press(0));
         assert!(engine.is_looping(PadId(0)));
+    }
+
+    #[test]
+    fn stop_all_stops_every_running_loop() {
+        let mut engine = Engine::new(MockBackend::default());
+        engine.set_mode(PadId(1), PlayMode::ToggleLoop);
+        engine.set_mode(PadId(2), PlayMode::HoldLoop);
+        engine.handle_event(press(1));
+        engine.handle_event(press(2));
+
+        let mut stopped = engine.stop_all();
+        stopped.sort_by_key(|p| p.0);
+        assert_eq!(stopped, vec![PadId(1), PadId(2)]);
+        assert!(!engine.is_looping(PadId(1)));
+        assert!(!engine.is_looping(PadId(2)));
     }
 }

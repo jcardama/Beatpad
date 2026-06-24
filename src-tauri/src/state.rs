@@ -54,6 +54,8 @@ pub enum AudioCmd {
     LoadPack(Vec<PackEntry>),
     /// Remove a single pad's sample.
     Clear(PadId),
+    /// Stop every running loop at once (panic).
+    StopAll,
 }
 
 /// Emitted when a pad's looping state flips, so the view reflects the engine as
@@ -131,6 +133,11 @@ impl AppState {
                     }
                     AudioCmd::Clear(pad) => {
                         clear_one(&app, &mut engine, &mut last_loop, pad);
+                    }
+                    AudioCmd::StopAll => {
+                        for pad in engine.stop_all() {
+                            emit_loop(&app, &mut last_loop, pad, false);
+                        }
                     }
                 }
             }

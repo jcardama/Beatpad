@@ -14,6 +14,7 @@ interface KeybindingsState {
   assignPadKey: (index: number, code: string) => void;
   assignBankKey: (code: string) => void;
   assignModeKey: (mode: PadMode, code: string) => void;
+  assignPanicKey: (code: string) => void;
   reset: () => void;
   setKeybindings: (keybindings: Keybindings) => void;
 }
@@ -29,6 +30,7 @@ function stealCode(kb: Keybindings, code: string): Keybindings {
       hold_loop: kb.modeKeys.hold_loop === code ? "" : kb.modeKeys.hold_loop,
       toggle_loop: kb.modeKeys.toggle_loop === code ? "" : kb.modeKeys.toggle_loop,
     },
+    panicKey: kb.panicKey === code ? "" : kb.panicKey,
   };
 }
 
@@ -61,6 +63,10 @@ export const useKeybindingsStore = create<KeybindingsState>((set) => ({
         keybindings: { ...kb, modeKeys: { ...kb.modeKeys, [mode]: code } },
       };
     }),
+  assignPanicKey: (code) =>
+    set((s) => ({
+      keybindings: { ...stealCode(s.keybindings, code), panicKey: code },
+    })),
   reset: () =>
     set((s) => ({ keybindings: defaultKeybindings(s.keybindings.scheme) })),
   setKeybindings: (keybindings) => set({ keybindings }),

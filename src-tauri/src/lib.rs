@@ -70,6 +70,7 @@ pub fn run() {
             commands::load_pad_sound,
             commands::load_beat_pack,
             commands::clear_pad,
+            commands::stop_all,
             commands::save_beat,
             commands::set_menu_visible,
             set_board_enabled,
@@ -126,7 +127,13 @@ fn build_menu(app: &tauri::App) -> tauri::Result<Menu<Wry>> {
         ],
     )?;
 
-    let clear = MenuItem::with_id(app, "clear_board", "Clear", false, None::<&str>)?;
+    let clear = MenuItem::with_id(
+        app,
+        "clear_board",
+        "Clear",
+        false,
+        Some("CmdOrCtrl+Backspace"),
+    )?;
     let edit = Submenu::with_items(app, "Edit", true, &[&clear])?;
 
     app.manage(MenuItems {
@@ -302,9 +309,13 @@ fn open_releases_page(app: AppHandle) {
 
 /// The OS account login name — a non-identifying default for the pack author,
 /// editable in Settings (never the real name, to avoid leaking PII on share).
+/// Falls back to "Unknown" when it can't be determined.
 #[tauri::command]
 fn system_username() -> String {
-    whoami::username()
+    match whoami::fallible::username() {
+        Ok(name) if !name.is_empty() => name,
+        _ => "Unknown".into(),
+    }
 }
 
 /// Size the window so the *content area* is square — the board fills it with no

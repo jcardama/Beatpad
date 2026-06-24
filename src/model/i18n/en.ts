@@ -57,6 +57,7 @@ export const en = {
     pads: "Pads",
     otherKeys: "Other keys",
     switchBank: "Switch bank",
+    stopAll: "Stop all",
     author: "Author",
     authorHint: "Stamped into the packs you save.",
     packs: "Packs",

@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Shared shape for the Launchpad-style round buttons framing the board. */
-export const ROUND_CONTROL =
+const ROUND_CONTROL =
   "flex aspect-square size-[78%] select-none items-center justify-center place-self-center rounded-full border transition-colors";
 
 interface Props {

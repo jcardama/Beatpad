@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 import { keyToPad } from "@/model/domain/keybindings";
 import type { Bank, PadId, PadMode } from "@/model/domain/pad";
+import { stopAll } from "@/model/ipc/commands";
 import { useKeybindingsStore } from "@/model/store/keybindingsStore";
 import { useSettingsStore } from "@/model/store/settingsStore";
 
@@ -54,6 +55,11 @@ export function useKeyboardInput({
       // Autorepeat must not re-fire bank/mode shortcuts (each mode switch is a
       // 64-pad IPC fan-out) or re-trigger held pads.
       if (event.repeat || isEditableTarget(event.target)) return;
+      if (event.code === kb.panicKey) {
+        event.preventDefault();
+        void stopAll();
+        return;
+      }
       if (kb.scheme === "banked" && event.code === kb.bankKey) {
         event.preventDefault();
         toggleBank();

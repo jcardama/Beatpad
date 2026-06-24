@@ -116,6 +116,12 @@ pub fn load_beat_pack(
     Ok(loaded)
 }
 
+/// Stop every running loop at once (panic).
+#[tauri::command]
+pub fn stop_all(state: State<AppState>) {
+    state.send(AudioCmd::StopAll);
+}
+
 /// Remove the sound from a single pad.
 #[tauri::command]
 pub fn clear_pad(pad: u16, state: State<AppState>, samples: State<SampleStore>) {

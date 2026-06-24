@@ -35,6 +35,9 @@ export const loadBeatPack = (path: string): Promise<LoadedPad[]> =>
 export const clearPad = (pad: PadId): Promise<void> =>
   ipc.invoke("clear_pad", { pad });
 
+/** Stop every running loop at once (panic). */
+export const stopAll = (): Promise<void> => ipc.invoke("stop_all");
+
 /** Manifest fields supplied when saving a board to a `.beat`. */
 export interface SaveMeta {
   name: string;

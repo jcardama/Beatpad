@@ -79,6 +79,7 @@ function App() {
         onAssignPadKey={keys.assignPadKey}
         onAssignBankKey={keys.assignBankKey}
         onAssignModeKey={keys.assignModeKey}
+        onAssignPanicKey={keys.assignPanicKey}
         onResetKeybindings={keys.reset}
       />
 

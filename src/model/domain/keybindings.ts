@@ -27,6 +27,8 @@ export interface Keybindings {
   padKeys: string[];
   bankKey: string;
   modeKeys: Record<PadMode, string>;
+  /** Stops every running loop at once. */
+  panicKey: string;
 }
 
 export const DEFAULT_BANKED_KEYS: readonly string[] = [
@@ -53,7 +55,9 @@ export function defaultKeybindings(scheme: KeyScheme): Keybindings {
     scheme,
     padKeys: defaultPadKeys(scheme),
     bankKey: "Tab",
-    modeKeys: { one_shot: "", hold_loop: "", toggle_loop: "" },
+    // Number-row keys past the pads (1–8), since the letter rows are all pads.
+    modeKeys: { one_shot: "Digit9", hold_loop: "Digit0", toggle_loop: "Minus" },
+    panicKey: "Space",
   };
 }
 
@@ -80,6 +84,7 @@ export function normalizeKeybindings(raw: unknown): Keybindings {
       hold_loop: r.modeKeys?.hold_loop ?? "",
       toggle_loop: r.modeKeys?.toggle_loop ?? "",
     },
+    panicKey: typeof r.panicKey === "string" ? r.panicKey : "Space",
   });
 }
 
@@ -102,6 +107,7 @@ function dedupeCodes(kb: Keybindings): Keybindings {
       hold_loop: keep(kb.modeKeys.hold_loop),
       toggle_loop: keep(kb.modeKeys.toggle_loop),
     },
+    panicKey: keep(kb.panicKey),
   };
 }
 

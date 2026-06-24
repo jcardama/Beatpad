@@ -7,6 +7,7 @@ export function useKeybindings() {
   const assignPadKey = useKeybindingsStore((s) => s.assignPadKey);
   const assignBankKey = useKeybindingsStore((s) => s.assignBankKey);
   const assignModeKey = useKeybindingsStore((s) => s.assignModeKey);
+  const assignPanicKey = useKeybindingsStore((s) => s.assignPanicKey);
   const reset = useKeybindingsStore((s) => s.reset);
   return {
     keybindings,
@@ -14,6 +15,7 @@ export function useKeybindings() {
     assignPadKey,
     assignBankKey,
     assignModeKey,
+    assignPanicKey,
     reset,
   };
 }
