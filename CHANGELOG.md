@@ -19,7 +19,7 @@ All notable changes to BeatPad are documented here. The format follows
 - Settings panel: theme (System/Dark/Light), language, and fully remappable keybindings with click-to-record.
 - Internationalization: typed message catalogs with OS-language detection, an in-app language switch, persistence, and a synced `<html lang>`. Ships **English** and **Spanish**.
 - Board persistence: per-pad assigned sounds and modes are saved and replayed on startup (missing files are dropped silently).
-- Automatic update check: polls GitHub Releases on startup and once a day, plus a **Check for Updates** menu item, surfacing the result in-app (no redirect) with an opt-in to open the releases page.
+- Automatic updates via Tauri's signed updater: checks on startup and once a day (plus a **Check for Updates** menu item), and installs a new release in place — download and relaunch — without ever leaving the app.
 - In-app toast notifications: update results and sample/pack load failures surface as themed, auto-dismissing toasts instead of native OS dialogs.
 - Save / Save As: export the current board to a `.beat` archive (the round-trip for the existing import). **Save** writes to the bound file, **Save As** prompts; both are greyed until the board has content.
 - An editable **Author** setting, seeded once from the OS login name (or **Unknown** if it can't be determined; never the real name, to avoid leaking PII) and stamped into saved packs.

@@ -76,7 +76,9 @@ export const es: Messages = {
   },
   update: {
     available: (version) => `BeatPad v${version} ya está disponible.`,
-    download: "Descargar",
+    install: "Instalar",
+    installing: "Descargando actualización…",
+    installFailed: "No se pudo instalar la actualización. Inténtalo más tarde.",
     upToDate: (version) => `Tienes la última versión (v${version}).`,
     checkFailed:
       "No se pudo comprobar si hay actualizaciones. Revisa tu conexión e inténtalo de nuevo.",

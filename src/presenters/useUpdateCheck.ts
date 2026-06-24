@@ -2,9 +2,9 @@ import { useEffect } from "react";
 
 import {
   checkForUpdates,
+  installUpdate,
   onMenuCheckUpdates,
   onUpdateAvailable,
-  openReleasesPage,
 } from "@/model/ipc/commands";
 import { useToastStore } from "@/model/store/toastStore";
 import { useT } from "@/presenters/useT";
@@ -15,7 +15,7 @@ const bareVersion = (tag: string) => tag.replace(/^v/, "");
  * Surfaces update results in-app as toasts instead of native OS dialogs: a
  * manual check (menu → Check for Updates) reports the outcome, and the
  * background checker raises an actionable toast when a newer release appears.
- * Opening the releases page only happens if the user clicks Download.
+ * Clicking Install downloads it and relaunches into the new version.
  */
 export function useUpdateCheck(): void {
   const t = useT();
@@ -27,8 +27,13 @@ export function useUpdateCheck(): void {
         variant: "update",
         message: t((m) => m.update.available(bareVersion(latest))),
         action: {
-          label: t((m) => m.update.download),
-          onClick: () => void openReleasesPage(),
+          label: t((m) => m.update.install),
+          onClick: () => {
+            show({ variant: "info", message: t((m) => m.update.installing) });
+            void installUpdate().catch(() =>
+              show({ variant: "error", message: t((m) => m.update.installFailed) }),
+            );
+          },
         },
       });
 

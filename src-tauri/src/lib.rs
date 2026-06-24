@@ -41,6 +41,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(SampleStore::default())
         .setup(|app| {
             app.manage(AppState::spawn(app.handle().clone()));
@@ -75,7 +76,7 @@ pub fn run() {
             commands::set_menu_visible,
             set_board_enabled,
             check_for_updates,
-            open_releases_page,
+            install_update,
             system_username
         ])
         .run(tauri::generate_context!())
@@ -292,19 +293,16 @@ fn set_board_enabled(enabled: bool, items: tauri::State<MenuItems>) {
     let _ = items.save_as.set_enabled(enabled);
 }
 
-/// Check GitHub for a newer release (off the UI thread). The frontend decides
-/// how to surface the result.
+/// Check for a newer signed release. The frontend decides how to surface it.
 #[tauri::command]
-async fn check_for_updates() -> update_check::UpdateStatus {
-    tauri::async_runtime::spawn_blocking(update_check::check_now)
-        .await
-        .unwrap_or(update_check::UpdateStatus::Failed)
+async fn check_for_updates(app: AppHandle) -> update_check::UpdateStatus {
+    update_check::check_now(&app).await
 }
 
-/// Open the releases page (only when the user opts in from the update prompt).
+/// Download and install the pending update in place, then relaunch.
 #[tauri::command]
-fn open_releases_page(app: AppHandle) {
-    open_url(&app, update_check::RELEASES_PAGE_URL);
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    update_check::install(&app).await.map_err(|e| e.to_string())
 }
 
 /// The OS account login name — a non-identifying default for the pack author,

@@ -79,7 +79,9 @@ export const en = {
   },
   update: {
     available: (version: string): string => `BeatPad v${version} is available.`,
-    download: "Download",
+    install: "Install",
+    installing: "Downloading update…",
+    installFailed: "Couldn't install the update. Try again later.",
     upToDate: (version: string): string =>
       `You're on the latest version (v${version}).`,
     checkFailed:

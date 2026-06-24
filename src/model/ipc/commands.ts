@@ -97,13 +97,13 @@ export type UpdateStatus =
   | { kind: "upToDate"; current: string }
   | { kind: "failed" };
 
-/** Ask GitHub whether a newer release exists (runs off the UI thread). */
+/** Ask whether a newer signed release exists (runs off the UI thread). */
 export const checkForUpdates = (): Promise<UpdateStatus> =>
   ipc.invoke<UpdateStatus>("check_for_updates");
 
-/** Open the releases page (only when the user opts in from the prompt). */
-export const openReleasesPage = (): Promise<void> =>
-  ipc.invoke("open_releases_page");
+/** Download and install the pending update, then relaunch (never resolves on
+ *  success — the app restarts). */
+export const installUpdate = (): Promise<void> => ipc.invoke("install_update");
 
 /** A newer release was found by the background checker; payload is its tag. */
 export const onUpdateAvailable = (handler: (latest: string) => void) =>

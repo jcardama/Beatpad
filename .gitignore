@@ -38,3 +38,15 @@ CLAUDE.local.md
 *.njsproj
 *.sln
 *.sw?
+.ds-sync/
+ds-bundle/
+
+# Design System
+.design-sync/
+ds-types/
+ds-entry.tsx
+index.d.ts
+
+# Tauri updater signing keys — NEVER commit (private key lives only in CI secrets)
+.tauri/
+*.key
