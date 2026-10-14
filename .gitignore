@@ -23,9 +23,8 @@ assets/logo-1024.png
 *.beat
 
 # Local agent context (private — not committed)
-CLAUDE.md
 CLAUDE.local.md
-/agent_docs/
+/agent_docs/audit-*.md
 .claude/
 
 # Editor directories and files
