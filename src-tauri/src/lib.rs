@@ -310,7 +310,7 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
 /// Falls back to "Unknown" when it can't be determined.
 #[tauri::command]
 fn system_username() -> String {
-    match whoami::fallible::username() {
+    match whoami::username() {
         Ok(name) if !name.is_empty() => name,
         _ => "Unknown".into(),
     }
