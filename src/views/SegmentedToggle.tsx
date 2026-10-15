@@ -18,7 +18,7 @@ export function SegmentedToggle<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="inline-flex rounded-lg border border-border p-1"
+      className="inline-flex rounded-lg border border-border bg-muted/40 p-1 shadow-[inset_0_1px_2px_rgb(0_0_0/0.08)]"
     >
       {options.map((o) => (
         <button
@@ -28,9 +28,9 @@ export function SegmentedToggle<T extends string>({
           aria-checked={value === o.id}
           onClick={() => onChange(o.id)}
           className={cn(
-            "rounded-md px-3 py-1 text-sm transition-colors",
+            "rounded-md px-3 py-1 text-sm transition-all",
             value === o.id
-              ? "bg-primary text-primary-foreground"
+              ? "tactile edge-light relative bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
         >

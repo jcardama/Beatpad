@@ -15,10 +15,11 @@ import {
 } from "@/model/domain/keybindings";
 import { LOCALES, type Locale } from "@/model/i18n/locale";
 import { PAD_MODES, type PadMode } from "@/model/domain/pad";
-import { THEMES, type Theme } from "@/model/domain/theme";
+import { type Theme } from "@/model/domain/theme";
 import { useT } from "@/presenters/useT";
 import { KeyRecorder } from "./KeyRecorder";
 import { SegmentedToggle } from "./SegmentedToggle";
+import { ThemePicker } from "./ThemePicker";
 
 interface Props {
   open: boolean;
@@ -81,7 +82,6 @@ export function SettingsDialog({
   const [section, setSection] = useState<SectionId>("appearance");
   const banked = keybindings.scheme === "banked";
 
-  const themeOptions = THEMES.map((id) => ({ id, label: t((m) => m.theme[id]) }));
   const localeOptions = LOCALES.map((id) => ({
     id,
     label: t((m) => m.language[id]),
@@ -108,30 +108,34 @@ export function SettingsDialog({
           {t((m) => m.settings.description)}
         </DialogDescription>
 
-        <nav className="flex w-56 shrink-0 flex-col gap-0.5 border-r border-border bg-muted/30 p-3">
-          <DialogTitle className="px-2 pt-1 pb-3 text-xs font-medium tracking-heading text-muted-foreground uppercase">
-            {t((m) => m.settings.title)}
-          </DialogTitle>
-          {nav.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSection(id)}
-              className={cn(
-                "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                section === id
-                  ? "bg-foreground/10 font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {label}
-            </button>
-          ))}
+        <nav className="flex w-56 shrink-0 flex-col border-r border-border/60">
+          <div className="flex h-16 shrink-0 items-center px-5">
+            <DialogTitle className="text-xs font-medium tracking-heading text-muted-foreground uppercase">
+              {t((m) => m.settings.title)}
+            </DialogTitle>
+          </div>
+          <div className="flex flex-col gap-0.5 p-3">
+            {nav.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSection(id)}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                  section === id
+                    ? "bg-foreground/10 font-medium text-foreground"
+                    : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {label}
+              </button>
+            ))}
+          </div>
         </nav>
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-4">
-          <div className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-border/60 pr-12 pl-6">
+          <div className="flex h-16 shrink-0 items-center justify-between gap-4 pr-14 pl-6">
             <h2 className="text-sm font-medium">{current.label}</h2>
             {section === "keybindings" && (
               <button
@@ -148,14 +152,16 @@ export function SettingsDialog({
               top bar + the pane's pb-4 keep them clear of the rounded corners. */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
             {section === "appearance" && (
-              <>
-                <Row label={t((m) => m.settings.theme)}>
-                  <SegmentedToggle
-                    options={themeOptions}
-                    value={theme}
-                    onChange={onThemeChange}
-                  />
-                </Row>
+              <div className="space-y-6">
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    {t((m) => m.settings.theme)}
+                  </div>
+                  <p className="mt-0.5 mb-3.5 text-xs text-muted-foreground">
+                    {t((m) => m.settings.themeHint)}
+                  </p>
+                  <ThemePicker value={theme} onChange={onThemeChange} />
+                </div>
                 <Row label={t((m) => m.language.label)}>
                   <SegmentedToggle
                     options={localeOptions}
@@ -163,7 +169,7 @@ export function SettingsDialog({
                     onChange={onLocaleChange}
                   />
                 </Row>
-              </>
+              </div>
             )}
 
             {section === "packs" && (

@@ -2,12 +2,17 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant gold (&:is(.gold *));
 
 @theme inline {
+    --font-sans: 'Geist Variable', system-ui, sans-serif;
+    --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+    /* Headings stay on Geist sans; the rest of the UI runs in Geist Mono
+       (lab01 "UI Experiment #01" — mono-driven interface). */
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
     /* Tight, weight-led heading tracking ported from the Spotify Mobile kit. */
     --tracking-display: -0.045em;
     --tracking-title: -0.03em;
@@ -43,92 +48,225 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
+    --color-pad-lit: var(--pad-lit);
+    --color-pad-lit-foreground: var(--pad-lit-foreground);
+    /* lab01 radii: 12px buttons (lg), 24px cards/dialogs (3xl). */
+    --radius-sm: calc(var(--radius) * 0.5);
+    --radius-md: calc(var(--radius) * 0.7);
     --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-xl: calc(var(--radius) * 1.35);
+    --radius-2xl: calc(var(--radius) * 1.7);
+    --radius-3xl: calc(var(--radius) * 2);
+    --radius-4xl: calc(var(--radius) * 2.4);
 }
 
 :root {
-    /* BeatPad brand (from the logo) */
+    /* BeatPad brand (from the logo) — the accent across Dark & Light. */
     --brand: #277bb2;
-    --ink: #333333;
-    --background: oklch(1 0 0);
-    --foreground: var(--ink); /* brand gray as the main text colour in light mode */
-    --card: oklch(1 0 0);
+    --ink: #1a1a1a;
+    --radius: 0.75rem;
+    /* Light theme — lab01's soft neutral (a warm-cool gray, never pure white). */
+    --background: oklch(0.91 0 0);
+    --foreground: var(--ink);
+    --card: oklch(0.95 0 0);
     --card-foreground: var(--ink);
-    --popover: oklch(1 0 0);
+    --popover: oklch(0.965 0 0);
     --popover-foreground: var(--ink);
     --primary: var(--brand);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
+    --secondary: oklch(0.87 0 0);
     --secondary-foreground: var(--ink);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.5 0 0); /* secondary text */
-    --accent: oklch(0.97 0 0);
+    --muted: oklch(0.87 0 0);
+    --muted-foreground: oklch(0.44 0 0);
+    --accent: oklch(0.84 0 0);
     --accent-foreground: var(--ink);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
+    --border: oklch(0.8 0 0);
+    --input: oklch(0.8 0 0);
     --ring: var(--brand);
+    /* The pad's lit/playing glow — blue here, a bright gold in the Gold theme. */
+    --pad-lit: var(--brand);
+    --pad-lit-foreground: oklch(0.985 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar: oklch(0.95 0 0);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--brand);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-accent: oklch(0.87 0 0);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: oklch(0.8 0 0);
+    --sidebar-ring: var(--brand);
+
+    /* ── Button physics ─────────────────────────────────────────────────────
+       Consumed by the .tactile / .edge-light / .recessed / .btn-surface /
+       .recessed-danger utilities. To ADD A THEME, copy this whole block (from
+       :root for a light-family theme, from .dark for a dark one) into the new
+       theme's token block and retune — no per-theme button CSS rules needed. */
+    --btn-shadow:
+      inset 0 0 0 1px hsl(0 0% 100% / 0.04),
+      0 0 0 1px hsl(0 0% 0% / 0.15),
+      0 1px 1px -0.5px hsl(0 0% 0% / 0.1),
+      0 4.5px 4.5px -2.25px hsl(0 0% 0% / 0.15),
+      0 18px 18px -9px hsl(0 0% 0% / 0.25);
+    --btn-sheen: radial-gradient(ellipse at -20px top, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0));
+    --btn-sheen-blend: normal;
+    --btn-emboss: 0 1px 0 hsl(0 0% 100% / 0.2);
+    --btn-bevel: linear-gradient(180deg, hsl(0 0% 100% / 0.75), hsl(0 0% 0% / 0.25) 41%, hsl(0 0% 0% / 0.25) 75%, hsl(0 0% 100% / 0.35));
+    --btn-fill-fg: #fff;
+    --btn-fill-shadow: 0 -1px 0 hsl(0 0% 0% / 0.4);
+    --btn-recessed: hsl(0 0% 0% / 0.1);
+    --btn-recessed-hover: hsl(0 0% 0% / 0.14);
+    --btn-recessed-fg: hsl(0 0% 0% / 0.83);
+    --btn-recessed-shadow: 0 1px 0 hsl(0 0% 100% / 0.2);
+    --btn-danger: color-mix(in oklab, var(--destructive) 14%, transparent);
+    --btn-danger-hover: color-mix(in oklab, var(--destructive) 22%, transparent);
+    --btn-danger-fg: var(--destructive);
+    --grain-opacity: 0.12;
+    --grain-blend: multiply;
 }
 
 .dark {
-    /* True-dark base (Spotify-style) with the brand #333 gray family as the
-       elevated surfaces — cards, menus, dialogs, toasts. */
-    --background: #121212;
-    --foreground: #f5f5f5;
-    --card: #1c1c1c;
-    --card-foreground: #f5f5f5;
-    --popover: #282828;
-    --popover-foreground: #f5f5f5;
+    /* lab01 neutrals (#111 base, #1F1F1F elevated) with the brand blue accent. */
+    --background: #111111;
+    --foreground: #fafafa;
+    --card: #1a1a1a;
+    --card-foreground: #fafafa;
+    --popover: #1f1f1f;
+    --popover-foreground: #fafafa;
     --primary: var(--brand);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: #282828;
-    --secondary-foreground: #f5f5f5;
-    --muted: #232323;
-    --muted-foreground: #b3b3b3; /* Spotify-style secondary text */
-    --accent: #2a2a2a;
-    --accent-foreground: #f5f5f5;
+    --secondary: #1f1f1f;
+    --secondary-foreground: #fafafa;
+    --muted: #1c1c1c;
+    --muted-foreground: #a1a1a1;
+    --accent: #262626;
+    --accent-foreground: #fafafa;
     --destructive: oklch(0.704 0.191 22.216);
-    --border: #2e2e2e;
-    --input: var(--ink);
+    --border: hsl(0 0% 100% / 0.08);
+    --input: hsl(0 0% 100% / 0.1);
     --ring: var(--brand);
+    /* The pad's lit/playing glow — blue here, a bright gold in the Gold theme. */
+    --pad-lit: var(--brand);
+    --pad-lit-foreground: oklch(0.985 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar: #1a1a1a;
+    --sidebar-foreground: #fafafa;
+    --sidebar-primary: var(--brand);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --sidebar-accent: #262626;
+    --sidebar-accent-foreground: #fafafa;
+    --sidebar-border: hsl(0 0% 100% / 0.08);
+    --sidebar-ring: var(--brand);
+
+    /* Button physics (see :root for the contract). */
+    --btn-shadow:
+      inset 0 0 0 1px hsl(0 0% 100% / 0.04),
+      0 0 0 1px hsl(0 0% 0% / 0.45),
+      0 40px 11px hsl(0 0% 0% / 0.01),
+      0 26px 10px hsl(0 0% 0% / 0.025),
+      0 14px 9px hsl(0 0% 0% / 0.1),
+      0 6px 6px hsl(0 0% 0% / 0.15),
+      0 2px 4px hsl(0 0% 0% / 0.25);
+    --btn-sheen: radial-gradient(ellipse at -20px top, hsl(0 0% 100% / 0.05), hsl(0 0% 100% / 0));
+    --btn-sheen-blend: normal;
+    --btn-emboss: 0 -1px 0 hsl(0 0% 0% / 0.5);
+    --btn-bevel: linear-gradient(180deg, hsl(0 0% 100% / 0.75), hsl(0 0% 0% / 0.48) 41%, hsl(0 0% 0% / 0.26) 75%, hsl(0 0% 100% / 0.25));
+    --btn-fill-fg: #fff;
+    --btn-fill-shadow: 0 -1px 0 hsl(0 0% 0% / 0.4);
+    --btn-recessed: hsl(0 0% 0% / 0.58);
+    --btn-recessed-hover: hsl(0 0% 0% / 0.64);
+    --btn-recessed-fg: hsl(0 0% 100% / 0.83);
+    --btn-recessed-shadow: none;
+    --btn-danger: color-mix(in oklab, var(--destructive) 26%, transparent);
+    --btn-danger-hover: color-mix(in oklab, var(--destructive) 34%, transparent);
+    --btn-danger-fg: var(--destructive);
+    --grain-opacity: 0.1;
+    --grain-blend: screen;
+}
+
+.gold {
+    /* lab01 gold — a warm metallic surface family, gold-brown as the accent. */
+    --background: #b18d50;
+    --foreground: #2f2212;
+    --card: #c0a064;
+    --card-foreground: #2f2212;
+    --popover: #c8aa6f;
+    --popover-foreground: #2f2212;
+    /* lab01's gold primary is a LUMINOUS light-gold raised key (its
+       `--color-bg-light`), not a dark fill — the radial sheen + overlay bevel
+       make it glow. Dark text, embossed. */
+    --primary: #ba965a;
+    --primary-foreground: #2f2212;
+    /* A muted tone barely lighter than the gold surface so secondary RECEDES —
+       the bright tan it used to be out-shouted the dark-brown primary. */
+    --secondary: oklch(0.72 0.05 80);
+    --secondary-foreground: #2f2212;
+    --muted: #a6803f;
+    --muted-foreground: hsl(35 35% 18% / 0.72);
+    --accent: #cdac72;
+    --accent-foreground: #2f2212;
+    /* Vivid saturated red — high chroma so it stays clearly "red" against warm
+       gold (a low-chroma deep red just read as muddy brown), mid-dark lightness
+       so the text keeps contrast over the gold + faint /10 fill. */
+    --destructive: oklch(0.51 0.235 27);
+    --border: hsl(35 40% 12% / 0.22);
+    --input: hsl(35 40% 12% / 0.2);
+    --ring: #372e22;
+    --pad-lit: #f2cf7a;
+    --pad-lit-foreground: #2f2212;
+    --chart-1: #ffe38f;
+    --chart-2: #886c4a;
+    --chart-3: #7f6845;
+    --chart-4: #5b4b32;
+    --chart-5: #372e22;
+    --sidebar: #c0a064;
+    --sidebar-foreground: #2f2212;
+    --sidebar-primary: #372e22;
+    --sidebar-primary-foreground: #ffe38f;
+    --sidebar-accent: #cdac72;
+    --sidebar-accent-foreground: #2f2212;
+    --sidebar-border: hsl(35 40% 12% / 0.22);
+    --sidebar-ring: #372e22;
+
+    /* Button physics (see :root for the contract). Gold is the bespoke one:
+       overlay-blended sheen, a warm-brown bevel, and a deep-red danger panel
+       with a light salmon label for 3-level contrast on the warm surface. */
+    --btn-shadow:
+      inset 0 0 0 1px hsl(0 0% 100% / 0.04),
+      0 0 0 1px hsl(0 0% 0% / 0.15),
+      0 40px 11px rgba(136, 97, 46, 0.01),
+      0 26px 10px rgba(136, 97, 46, 0.05),
+      0 14px 9px rgba(136, 97, 46, 0.17),
+      0 6px 6px rgba(136, 97, 46, 0.29),
+      0 2px 4px rgba(136, 97, 46, 0.33);
+    --btn-sheen: radial-gradient(ellipse at -20px top, hsl(0 0% 100% / 0.25), hsl(0 0% 100% / 0));
+    --btn-sheen-blend: overlay;
+    --btn-emboss: 0 1px 0 hsl(0 0% 100% / 0.3);
+    --btn-bevel: linear-gradient(180deg, hsl(0 0% 100% / 0.65), hsl(38 29% 28% / 0.68) 41%, hsl(36 30% 38% / 0.46) 75%, hsl(0 0% 100% / 0.25));
+    --btn-fill-fg: rgb(47 34 18 / 0.83);
+    --btn-fill-shadow: 0 1px 0 hsl(0 0% 100% / 0.3);
+    --btn-recessed: hsl(35 35% 43% / 0.78);
+    --btn-recessed-hover: hsl(35 35% 43% / 0.88);
+    --btn-recessed-fg: hsl(0 0% 100% / 0.8);
+    --btn-recessed-shadow: 0 -1px 0 hsl(0 0% 0% / 0.15);
+    --btn-danger: oklch(0.44 0.19 25);
+    --btn-danger-hover: oklch(0.49 0.2 25);
+    --btn-danger-fg: oklch(0.83 0.13 22);
+    --grain-opacity: 0.15;
+    --grain-blend: overlay;
 }
 
 @layer components {
   /* Typographic scale ported from the Spotify Mobile kit: a tight, weight-led
-     hierarchy. Their Avenir/Circular is proprietary, so it renders in Geist. */
+     hierarchy on Geist sans, standing out against the mono body. */
   .type-display {
     @apply font-heading text-2xl font-bold tracking-display;
   }
@@ -143,15 +281,129 @@
   }
 }
 
+@layer utilities {
+  /* Film grain (lab01): an feTurbulence noise overlay, screen-blended on dark
+     surfaces and multiplied on light. Add `.grain` to a positioned surface. */
+  /* Consumer must establish a positioning context (`relative`/`fixed`/`absolute`). */
+  .grain {
+    isolation: isolate;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+  }
+
+  /* Frosted glass (lab01) — translucent surface + backdrop blur, for dialogs,
+     menus and popovers floating over the textured board. */
+  .glass {
+    background: color-mix(in srgb, var(--popover) 62%, transparent);
+    backdrop-filter: blur(26px) saturate(1.25);
+    -webkit-backdrop-filter: blur(26px) saturate(1.25);
+  }
+
+  /* Tactile RAISED control — ported from lab01 `.btn-primary`: an inset
+     hairline + a faint outer ring + a stack of layered drop shadows for lift,
+     plus a top-left radial sheen painted over the element's own background.
+     Pair with `.edge-light` (the gradient-stroke bevel) on the same element. */
+  .tactile {
+    box-shadow: var(--btn-shadow);
+    background-image: var(--btn-sheen);
+    background-blend-mode: var(--btn-sheen-blend);
+    text-shadow: var(--btn-emboss);
+  }
+
+  /* Gradient-stroke bevel — ported from lab01 `.btn-primary::after`: a 1.5px
+     ring sitting exactly on the element edge (border-box ring via padding-box
+     mask exclude), with a bright-top → dark-mid → light-bottom gradient blended
+     `overlay` so it reads as a real bevel that hugs the full rounded edge
+     (NOT a detached top glow). */
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    border: 1.5px solid transparent;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    background: var(--btn-bevel) border-box;
+    -webkit-mask:
+      linear-gradient(#000 0 0) padding-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) padding-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* Recessed FLAT panel — ported from lab01 `.btn-secondary`: a translucent
+     fill, no lift, no bevel; reads as inset/subordinate next to a raised
+     `.tactile` primary. */
+  .recessed {
+    background: var(--btn-recessed);
+    color: var(--btn-recessed-fg);
+    text-shadow: var(--btn-recessed-shadow);
+  }
+  .recessed:hover {
+    background: var(--btn-recessed-hover);
+  }
+
+  /* Primary fill — keeps the lab01 raised treatment (.tactile + .edge-light)
+     but uses BeatPad's brand blue in light/dark; gold theme keeps the luminous
+     gold accent. White text with an engraved shadow on the blue, dark embossed
+     text on the gold (which carries the radial-sheen overlay). */
+  .btn-surface {
+    background-color: var(--primary);
+    color: var(--btn-fill-fg);
+    text-shadow: var(--btn-fill-shadow);
+  }
+
+  /* Danger — a flat, red-tinted recessed panel (subordinate to the raised
+     primary, mirroring `.recessed` but signalling danger). Per-theme tint so it
+     stays visible against each surface; text uses the theme `--destructive`. */
+  .recessed-danger {
+    background: var(--btn-danger);
+    color: var(--btn-danger-fg);
+  }
+  .recessed-danger:hover {
+    background: var(--btn-danger-hover);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
     }
+  /* App-wide film grain behind the UI — gives the board a textured surface and
+     something for the frosted dialogs to blur over. Grayscaled noise, sits
+     under the content (z:-1) and modulates the background. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+  }
+  .dark body::before {
+    opacity: 0.5;
+    mix-blend-mode: soft-light;
+  }
   html {
-    @apply font-sans;
+    @apply font-mono;
     }
   html, body, #root {
     height: 100%;

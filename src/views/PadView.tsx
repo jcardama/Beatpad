@@ -57,15 +57,16 @@ export const PadView = memo(function PadView({
           onPointerUp={release}
           onPointerLeave={release}
           className={cn(
-            "flex select-none items-center justify-center rounded-[16%] border text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
+            "relative flex select-none items-center justify-center rounded-[18%] text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
             empty
-              ? "border border-dashed border-border bg-muted/40 text-muted-foreground"
-              : "border-primary/30 bg-gradient-to-br from-primary/40 to-primary/15 text-foreground",
-            !empty && !active && "opacity-45",
-            !empty && pad.looping && "ring-2 ring-primary animate-pulse",
+              ? "border border-dashed border-border bg-foreground/[0.02] text-muted-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.1)]"
+              : "edge-light border border-pad-lit/25 text-foreground",
+            !empty && !pad.lit && "tactile bg-pad-lit/15",
+            !empty && !active && "opacity-40",
+            !empty && pad.looping && "ring-2 ring-pad-lit animate-pulse",
             !empty &&
               pad.lit &&
-              "scale-95 border-primary bg-primary bg-none text-primary-foreground shadow-lg shadow-primary/30",
+              "scale-95 border-pad-lit bg-pad-lit text-pad-lit-foreground shadow-[0_0_22px_-2px_var(--pad-lit)]",
           )}
         >
           {pad.label}

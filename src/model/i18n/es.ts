@@ -30,6 +30,7 @@ export const es: Messages = {
     system: "Sistema",
     dark: "Oscuro",
     light: "Claro",
+    gold: "Dorado",
   },
   scheme: {
     banked: "Por bancos (32)",
@@ -45,6 +46,7 @@ export const es: Messages = {
     description: "Apariencia y asignaciones de teclado.",
     appearance: "Apariencia",
     theme: "Tema",
+    themeHint: "Personaliza el aspecto de la app.",
     keybindings: "Atajos de teclado",
     resetToDefaults: "Restablecer",
     keyLayout: "Distribución de teclas",

@@ -6,8 +6,12 @@ All notable changes to BeatPad are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- A third **Gold** theme alongside Dark and Light, selectable from Settings → Appearance, which now presents the themes as visual swatches.
+
 ### Changed
 - Pad presses no longer stall while a pack loads, and pack loading, board restore, and pad rendering are faster.
+- Reworked the visual language toward a warmer, more tactile look: buttons and controls gain a soft shimmer and lift (no hard outlines), gradient-stroke edges, layered shadows, and a subtle film-grain surface. Light/Gold buttons now read consistently with Dark. Interface text now uses Geist Mono, with headings on Geist.
 
 ## [0.1.0] - 2026-06-18
 

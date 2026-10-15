@@ -31,6 +31,7 @@ export const en = {
     system: "System",
     dark: "Dark",
     light: "Light",
+    gold: "Gold",
   },
   scheme: {
     banked: "Banked (32)",
@@ -46,6 +47,7 @@ export const en = {
     description: "Appearance and keyboard mappings.",
     appearance: "Appearance",
     theme: "Theme",
+    themeHint: "Customize the look across the app.",
     keybindings: "Keybindings",
     resetToDefaults: "Reset to defaults",
     keyLayout: "Key layout",
