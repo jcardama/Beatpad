@@ -92,6 +92,9 @@ export const en = {
   toast: {
     dismiss: "Dismiss",
   },
+  common: {
+    close: "Close",
+  },
 };
 
 /** The translation contract: the exact shape of the English catalog. */

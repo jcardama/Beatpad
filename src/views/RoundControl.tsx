@@ -2,9 +2,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-const ROUND_CONTROL =
-  "edge-light relative flex aspect-square size-[78%] select-none items-center justify-center place-self-center rounded-full transition-colors";
-
 interface Props {
   active?: boolean;
   title: string;
@@ -13,7 +10,7 @@ interface Props {
   children: ReactNode;
 }
 
-/** Round framing button. `active` fills it; otherwise it sits muted. */
+/** Round framing button: raised at rest, pressed and filled when `active`. */
 export function RoundControl({ active = false, title, label, onClick, children }: Props) {
   return (
     <button
@@ -23,10 +20,8 @@ export function RoundControl({ active = false, title, label, onClick, children }
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        ROUND_CONTROL,
-        active
-          ? "tactile bg-primary text-primary-foreground"
-          : "tactile bg-secondary text-muted-foreground hover:text-foreground",
+        "icon-line relative flex aspect-square size-[78%] select-none items-center justify-center place-self-center rounded-full transition-[translate] duration-100 active:translate-y-px",
+        active ? "pressed" : "raised",
       )}
     >
       {children}

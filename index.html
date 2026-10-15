@@ -7,9 +7,11 @@
     <title>BeatPad</title>
     <script>
       // Follow the OS theme before React loads, to avoid a flash.
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        document.documentElement.classList.add("dark");
-      }
+      document.documentElement.dataset.theme = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches
+        ? "dark"
+        : "light";
     </script>
   </head>
 

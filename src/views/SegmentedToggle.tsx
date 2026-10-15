@@ -7,7 +7,7 @@ interface Props<T extends string> {
   onChange: (value: T) => void;
 }
 
-/** Segmented control (a single-choice radio group), optionally labelled. */
+/** Single-choice chip group (a radio group), optionally labelled. */
 export function SegmentedToggle<T extends string>({
   label,
   options,
@@ -15,11 +15,7 @@ export function SegmentedToggle<T extends string>({
   onChange,
 }: Props<T>) {
   const control = (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="inline-flex rounded-lg border border-border bg-muted/40 p-1 shadow-[inset_0_1px_2px_rgb(0_0_0/0.08)]"
-    >
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
       {options.map((o) => (
         <button
           key={o.id}
@@ -28,10 +24,10 @@ export function SegmentedToggle<T extends string>({
           aria-checked={value === o.id}
           onClick={() => onChange(o.id)}
           className={cn(
-            "rounded-md px-3 py-1 text-sm transition-all",
+            "flex h-[26px] items-center rounded-full px-2.5 whitespace-nowrap",
             value === o.id
-              ? "tactile edge-light relative bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground",
+              ? "bg-control-on text-on-control [text-shadow:none]"
+              : "bg-chip-surface text-text",
           )}
         >
           {o.label}
@@ -43,7 +39,7 @@ export function SegmentedToggle<T extends string>({
   if (!label) return control;
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-text-subtle">{label}</span>
       {control}
     </div>
   );

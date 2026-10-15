@@ -2,7 +2,7 @@ import type { Bank } from "@/model/domain/pad";
 
 /**
  * Two stacked rounded rectangles in the lucide line-icon style (stroke
- * `currentColor`, width 2, rounded). The active grid half is filled; the
+ * `currentColor`, width 1.5, rounded). The active grid half is filled; the
  * inactive half is outlined only.
  */
 export function BankIcon({ bank }: { bank: Bank }) {
@@ -22,7 +22,7 @@ export function BankIcon({ bank }: { bank: Bank }) {
         rx="2"
         fill={bank === "top" ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.5}
       />
       <rect
         x="3"
@@ -32,7 +32,7 @@ export function BankIcon({ bank }: { bank: Bank }) {
         rx="2"
         fill={bank === "bottom" ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.5}
       />
     </svg>
   );

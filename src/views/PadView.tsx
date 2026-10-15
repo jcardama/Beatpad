@@ -1,4 +1,5 @@
 import { memo, type PointerEvent } from "react";
+import { Music, Trash2 } from "lucide-react";
 
 import {
   ContextMenu,
@@ -26,7 +27,7 @@ interface Props {
 }
 
 /** Presentational beat cell with a right-click menu to set its mode, change, or
- *  clear its sound. Empty pads are greyed and inert. */
+ *  clear its sound. Empty pads sit recessed and inert; loaded pads are raised. */
 export const PadView = memo(function PadView({
   pad,
   active,
@@ -56,24 +57,21 @@ export const PadView = memo(function PadView({
           onPointerDown={press}
           onPointerUp={release}
           onPointerLeave={release}
+          data-pad={pad.id}
           className={cn(
-            "relative flex select-none items-center justify-center rounded-[18%] text-[clamp(0.6rem,2.2vmin,1rem)] font-semibold transition-all duration-75",
-            empty
-              ? "border border-dashed border-border bg-foreground/[0.02] text-muted-foreground shadow-[inset_0_1px_3px_rgb(0_0_0/0.1)]"
-              : "edge-light border border-pad-lit/25 text-foreground",
-            !empty && !pad.lit && "tactile bg-pad-lit/15",
-            !empty && !active && "opacity-40",
-            !empty && pad.looping && "ring-2 ring-pad-lit animate-pulse",
+            "relative flex select-none items-center justify-center rounded-[16%] text-[clamp(0.6rem,2.2vmin,1rem)] transition-[scale,box-shadow,background-color] duration-75",
+            empty ? "well text-text-subtle" : pad.lit ? "pressed scale-[.96]" : "raised",
+            !active && "opacity-40",
             !empty &&
-              pad.lit &&
-              "scale-95 border-pad-lit bg-pad-lit text-pad-lit-foreground shadow-[0_0_22px_-2px_var(--pad-lit)]",
+              pad.looping &&
+              "animate-pulse outline-[1.5px] outline-offset-3 outline-ink-strong outline-solid",
           )}
         >
           {pad.label}
         </button>
       </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-44">
+      <ContextMenuContent>
         <ContextMenuRadioGroup
           value={pad.mode}
           onValueChange={(v) => onSetMode(pad.id, v as PadMode)}
@@ -86,13 +84,12 @@ export const PadView = memo(function PadView({
         </ContextMenuRadioGroup>
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => onAssign(pad.id)}>
+          <Music />
           {empty ? t((m) => m.pad.loadSound) : t((m) => m.pad.changeSound)}
         </ContextMenuItem>
         {!empty && (
-          <ContextMenuItem
-            variant="destructive"
-            onSelect={() => onClear(pad.id)}
-          >
+          <ContextMenuItem onSelect={() => onClear(pad.id)}>
+            <Trash2 />
             {t((m) => m.pad.clearSound)}
           </ContextMenuItem>
         )}

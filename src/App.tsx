@@ -45,7 +45,7 @@ function App() {
   useBeatFile();
 
   return (
-    <main className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-3">
+    <main className="flex h-screen w-screen items-center justify-center overflow-hidden p-3">
       <div
         className="aspect-square"
         style={{ width: "min(100vw - 1.5rem, 100vh - 1.5rem)" }}

@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { Keyboard, Package, Palette } from "lucide-react";
+import { Keyboard, Package, Palette, XIcon } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -51,10 +53,10 @@ function Row({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 border-b border-border/60 py-3.5 last:border-b-0">
+    <div className="flex items-center justify-between gap-(--space-3)">
       <div className="min-w-0">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+        <div>{label}</div>
+        {hint && <p className="text-text-subtle">{hint}</p>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -102,64 +104,65 @@ export function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
-        className="flex h-[78vh] max-h-[560px] min-h-[420px] w-full gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        className="h-[560px] max-h-[calc(100%-2rem)] w-[672px] flex-row overflow-hidden"
       >
         <DialogDescription className="sr-only">
           {t((m) => m.settings.description)}
         </DialogDescription>
 
-        <nav className="flex w-56 shrink-0 flex-col border-r border-border/60">
-          <div className="flex h-16 shrink-0 items-center px-5">
-            <DialogTitle className="text-xs font-medium tracking-heading text-muted-foreground uppercase">
-              {t((m) => m.settings.title)}
-            </DialogTitle>
-          </div>
-          <div className="flex flex-col gap-0.5 p-3">
-            {nav.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setSection(id)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                  section === id
-                    ? "bg-foreground/10 font-medium text-foreground"
-                    : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
-                )}
-              >
-                <Icon className="size-4 shrink-0" />
-                {label}
-              </button>
-            ))}
-          </div>
+        <nav className="icon-line flex w-[200px] shrink-0 flex-col gap-0.5 p-(--space-2) pt-(--space-3)">
+          <DialogTitle className="px-2 pb-(--space-2) font-mono text-[13px] leading-normal tracking-normal text-text-subtle">
+            {t((m) => m.settings.title)}
+          </DialogTitle>
+          {nav.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSection(id)}
+              className={cn(
+                "flex h-(--menu-item-height) items-center gap-2 rounded-(--radius-item) px-2 text-left",
+                section === id
+                  ? "bg-menu-marker-active text-text"
+                  : "text-text-subtle hover:bg-menu-marker",
+              )}
+            >
+              <Icon className="size-4 shrink-0" />
+              {label}
+            </button>
+          ))}
         </nav>
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-4">
-          <div className="flex h-16 shrink-0 items-center justify-between gap-4 pr-14 pl-6">
-            <h2 className="text-sm font-medium">{current.label}</h2>
-            {section === "keybindings" && (
-              <button
-                type="button"
-                onClick={onResetKeybindings}
-                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              >
-                {t((m) => m.settings.resetToDefaults)}
-              </button>
-            )}
+        <div className="hairline-y my-(--space-3)" />
+
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex shrink-0 items-center justify-between gap-(--space-2) px-(--space-3) pt-(--space-3)">
+            <h2 className="title">{current.label}</h2>
+            <div className="flex items-center gap-(--space-2)">
+              {section === "keybindings" && (
+                <Button variant="secondary" onClick={onResetKeybindings}>
+                  {t((m) => m.settings.resetToDefaults)}
+                </Button>
+              )}
+              <DialogClose asChild>
+                <Button size="icon" aria-label={t((m) => m.common.close)}>
+                  <XIcon />
+                </Button>
+              </DialogClose>
+            </div>
           </div>
 
           {/* WebView2's native scrollbar arrows can't be removed via CSS; the
-              top bar + the pane's pb-4 keep them clear of the rounded corners. */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
+              header + the pane's bottom padding keep them clear of the corners. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-(--space-4) overflow-y-auto px-(--space-3) py-(--space-4)">
             {section === "appearance" && (
-              <div className="space-y-6">
-                <div>
-                  <div className="text-sm font-medium text-foreground">
-                    {t((m) => m.settings.theme)}
+              <>
+                <div className="flex flex-col gap-(--space-2)">
+                  <div>
+                    <div>{t((m) => m.settings.theme)}</div>
+                    <p className="text-text-subtle">
+                      {t((m) => m.settings.themeHint)}
+                    </p>
                   </div>
-                  <p className="mt-0.5 mb-3.5 text-xs text-muted-foreground">
-                    {t((m) => m.settings.themeHint)}
-                  </p>
                   <ThemePicker value={theme} onChange={onThemeChange} />
                 </div>
                 <Row label={t((m) => m.language.label)}>
@@ -169,7 +172,7 @@ export function SettingsDialog({
                     onChange={onLocaleChange}
                   />
                 </Row>
-              </div>
+              </>
             )}
 
             {section === "packs" && (
@@ -182,13 +185,13 @@ export function SettingsDialog({
                   type="text"
                   value={author}
                   onChange={(e) => onAuthorChange(e.target.value)}
-                  className="w-44 rounded-md border border-border bg-transparent px-2.5 py-1 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-(--button-height) w-48 rounded-(--radius-control) bg-field-surface px-(--space-2) text-text shadow-well placeholder:text-text-subtle"
                 />
               </Row>
             )}
 
             {section === "keybindings" && (
-              <div className="space-y-4">
+              <>
                 <Row label={t((m) => m.settings.keyLayout)}>
                   <SegmentedToggle
                     options={schemeOptions}
@@ -197,19 +200,20 @@ export function SettingsDialog({
                   />
                 </Row>
 
-                <p className="text-xs text-muted-foreground">
-                  {banked
-                    ? t((m) => m.settings.helpBanked)
-                    : t((m) => m.settings.helpDirect)}
-                </p>
-
-                <div className="space-y-2">
-                  <span className="text-xs text-muted-foreground">
-                    {banked
-                      ? t((m) => m.settings.padsOneBank)
-                      : t((m) => m.settings.pads)}
-                  </span>
-                  <div className="grid grid-cols-8 gap-1.5">
+                <div className="flex flex-col gap-(--space-2)">
+                  <div>
+                    <div>
+                      {banked
+                        ? t((m) => m.settings.padsOneBank)
+                        : t((m) => m.settings.pads)}
+                    </div>
+                    <p className="text-text-subtle">
+                      {banked
+                        ? t((m) => m.settings.helpBanked)
+                        : t((m) => m.settings.helpDirect)}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-8 gap-2">
                     {Array.from(
                       { length: padKeyCount(keybindings.scheme) },
                       (_, i) => (
@@ -224,11 +228,9 @@ export function SettingsDialog({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-xs text-muted-foreground">
-                    {t((m) => m.settings.otherKeys)}
-                  </span>
-                  <div className="flex flex-col">
+                <div className="flex flex-col gap-(--space-2)">
+                  <div>{t((m) => m.settings.otherKeys)}</div>
+                  <div className="flex flex-col gap-(--space-2)">
                     {banked && (
                       <Row label={t((m) => m.settings.switchBank)}>
                         <KeyRecorder
@@ -256,7 +258,7 @@ export function SettingsDialog({
                     ))}
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>

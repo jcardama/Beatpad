@@ -88,4 +88,7 @@ export const es: Messages = {
   toast: {
     dismiss: "Cerrar",
   },
+  common: {
+    close: "Cerrar",
+  },
 };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Popover } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 import { keyLabel } from "@/model/domain/keybindings";
@@ -10,7 +11,8 @@ interface Props {
   className?: string;
 }
 
-/** Click to record the next key press as a binding. Esc cancels. */
+/** A keycap: click to record the next key press as a binding. Esc or a click
+ *  elsewhere cancels. While recording, a floating pill shows the hint. */
 export function KeyRecorder({ code, onCapture, className }: Props) {
   const t = useT();
   const [recording, setRecording] = useState(false);
@@ -29,23 +31,32 @@ export function KeyRecorder({ code, onCapture, className }: Props) {
   }, [recording, onCapture]);
 
   return (
-    <button
-      type="button"
-      title={
-        recording
-          ? t((m) => m.keyRecorder.recording)
-          : t((m) => m.keyRecorder.rebind)
-      }
-      onClick={() => setRecording(true)}
-      className={cn(
-        "flex items-center justify-center rounded-md border text-sm font-medium transition-colors",
-        recording
-          ? "animate-pulse border-primary bg-primary/15 text-primary"
-          : "border-border bg-muted/40 text-foreground hover:bg-muted/70",
-        className,
-      )}
-    >
-      {recording ? "…" : keyLabel(code)}
-    </button>
+    <Popover.Root open={recording} onOpenChange={setRecording}>
+      <Popover.Anchor asChild>
+        <button
+          type="button"
+          title={recording ? undefined : t((m) => m.keyRecorder.rebind)}
+          onClick={() => setRecording(true)}
+          className={cn(
+            "flex items-center justify-center rounded-(--radius-menu) transition-[translate] duration-100 active:translate-y-px",
+            recording ? "pressed" : "raised",
+            className,
+          )}
+        >
+          {recording ? "…" : keyLabel(code)}
+        </button>
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          sideOffset={8}
+          collisionPadding={12}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-50 rounded-full bg-menu-surface px-2.5 py-1 whitespace-nowrap text-text shadow-floating"
+        >
+          {t((m) => m.keyRecorder.recording)}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

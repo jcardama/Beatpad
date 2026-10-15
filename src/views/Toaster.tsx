@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { X } from "lucide-react";
+import { TriangleAlert, X } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   useToastStore,
   type Toast,
@@ -17,19 +17,13 @@ const AUTO_DISMISS: Record<ToastVariant, number | null> = {
   update: null,
 };
 
-const ACCENT: Record<ToastVariant, string> = {
-  info: "bg-foreground/30",
-  error: "bg-destructive",
-  update: "bg-primary",
-};
-
 /** Stacked in-app notifications, bottom-right. */
 export function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"
+      className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-[340px] max-w-[calc(100vw-2rem)] flex-col gap-2"
     >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
@@ -41,6 +35,9 @@ export function Toaster() {
 function ToastItem({ toast }: { toast: Toast }) {
   const t = useT();
   const dismiss = useToastStore((s) => s.dismiss);
+  // Messages put a headline first and any detail after the first newline.
+  const [headline, ...rest] = toast.message.split("\n");
+  const detail = rest.join("\n");
 
   useEffect(() => {
     const ms = AUTO_DISMISS[toast.variant];
@@ -52,34 +49,35 @@ function ToastItem({ toast }: { toast: Toast }) {
   return (
     <div
       role="status"
-      className="pointer-events-auto flex overflow-hidden rounded-lg border bg-popover text-sm text-popover-foreground shadow-lg"
+      className="edge-menu icon-line pointer-events-auto relative flex items-start gap-(--space-2) rounded-(--radius-control) bg-menu-surface p-(--space-2) text-text shadow-floating"
     >
-      {/* Accent bar: clipped by the container's rounding, so it rounds only on
-          the outer (far-left) edge and stays flat where it meets the body. */}
-      <span className={cn("w-1.5 shrink-0", ACCENT[toast.variant])} />
-      <div className="flex flex-1 items-center gap-3 px-3 py-2.5">
-        <p className="flex-1 whitespace-pre-line">{toast.message}</p>
-        {toast.action && (
-          <button
-            type="button"
-            onClick={() => {
-              toast.action?.onClick();
-              dismiss(toast.id);
-            }}
-            className="shrink-0 font-medium text-primary hover:underline"
-          >
-            {toast.action.label}
-          </button>
+      {toast.variant === "error" && <TriangleAlert className="mt-0.5 size-4 shrink-0" />}
+      <div className="min-w-0 flex-1 self-center">
+        <p className="break-words">{headline}</p>
+        {detail && (
+          <p className="break-words whitespace-pre-line text-text-subtle">{detail}</p>
         )}
-        <button
-          type="button"
-          aria-label={t((m) => m.toast.dismiss)}
-          onClick={() => dismiss(toast.id)}
-          className="shrink-0 text-muted-foreground hover:text-foreground"
-        >
-          <X className="size-4" />
-        </button>
       </div>
+      {toast.action && (
+        <Button
+          variant="secondary"
+          className="self-center"
+          onClick={() => {
+            toast.action?.onClick();
+            dismiss(toast.id);
+          }}
+        >
+          {toast.action.label}
+        </Button>
+      )}
+      <button
+        type="button"
+        aria-label={t((m) => m.toast.dismiss)}
+        onClick={() => dismiss(toast.id)}
+        className="mt-0.5 shrink-0 text-text-subtle hover:text-text"
+      >
+        <X className="size-4" />
+      </button>
     </div>
   );
 }
