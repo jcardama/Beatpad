@@ -19,6 +19,7 @@ export function usePersistBoard(): void {
   const paths = useTransportStore((s) => s.paths);
   const modes = useTransportStore((s) => s.modes);
   const hydrated = useRef(false);
+  const skipRestoreSave = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -40,6 +41,7 @@ export function usePersistBoard(): void {
         } catch {
           // An unavailable backend must not prevent settings hydration.
         }
+        if (restored.length || loaded.length) skipRestoreSave.current = true;
         if (restored.length) store.setModes(restored);
         if (loaded.length) store.setPaths(loaded);
       }
@@ -48,6 +50,10 @@ export function usePersistBoard(): void {
   }, []);
 
   useEffect(() => {
+    if (skipRestoreSave.current) {
+      skipRestoreSave.current = false;
+      return;
+    }
     if (hydrated.current) void saveSetting("board", { paths, modes });
   }, [paths, modes]);
 }

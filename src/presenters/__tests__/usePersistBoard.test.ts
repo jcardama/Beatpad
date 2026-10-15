@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 import { DEFAULT_MODE, PAD_COUNT } from "@/model/domain/pad";
 import { ipc } from "@/model/ipc/client";
-import { loadSetting } from "@/model/ipc/configStore";
+import { loadSetting, saveSetting } from "@/model/ipc/configStore";
 import { useTransportStore } from "@/model/store/transportStore";
 import { usePersistBoard } from "@/presenters/usePersistBoard";
 
@@ -54,6 +54,39 @@ it("restores in one IPC call and records only paths returned by the backend", as
     unmount();
   }
 });
+
+it.each(["partial", "rejected", "empty"] as const)(
+  "does not persist a %s restore, but saves the next user change",
+  async (outcome) => {
+    vi.mocked(loadSetting).mockResolvedValue({
+      paths: ["/read.wav", "/missing.wav"],
+      modes: outcome === "empty" ? [] : ["hold_loop"],
+    });
+    if (outcome === "rejected") {
+      vi.mocked(ipc.invoke).mockRejectedValue(new Error("backend unavailable"));
+    } else {
+      vi.mocked(ipc.invoke).mockResolvedValue(outcome === "partial"
+        ? [{ pad: 0, path: "/read.wav", mode: "hold_loop" }]
+        : []);
+    }
+
+    const { unmount } = renderHook(() => usePersistBoard());
+    try {
+      await act(async () => {});
+      expect(saveSetting).not.toHaveBeenCalled();
+
+      act(() => useTransportStore.getState().setPadMode(2, "toggle_loop"));
+
+      expect(saveSetting).toHaveBeenCalledTimes(1);
+      expect(saveSetting).toHaveBeenCalledWith("board", {
+        paths: expect.any(Array),
+        modes: expect.arrayContaining(["toggle_loop"]),
+      });
+    } finally {
+      unmount();
+    }
+  },
+);
 
 it("restores saved modes even when the backend rejects board restore", async () => {
   vi.mocked(loadSetting).mockResolvedValue({
