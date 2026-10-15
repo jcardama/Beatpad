@@ -32,7 +32,7 @@ See `crates/engine/src/backend/kira_backend.rs` for the live usage; `crates/engi
 - It offers neither exclusive mode nor `IAudioClient3` low-latency shared mode; callbacks follow the OS audio-engine period regardless of the requested buffer size.
 - Measured on Windows 11 with a USB output at 48 kHz, stereo F32: `Fixed(64)`, `Fixed(128)`, `Fixed(256)`, `Fixed(480)`, `Fixed(960)`, and `Default` were all accepted without stream errors.
 - All behaved identically: 480-frame (10 ms) callbacks, with a larger first callback of 1056 frames.
-- cpal's WASAPI output timestamp sets `playback = callback + frames_in_this_callback`: `playback − callback` equals the period by construction, not an independent device-latency measurement or acoustic loopback.
+- cpal's WASAPI output timestamp sets `playback = callback + frames_in_this_callback`, so `playback − callback` is that callback's own length by construction (10 ms for the steady 480-frame callbacks, 22 ms for the 1056-frame first one). It is not an independent device-latency measurement or acoustic loopback.
 - Do not plumb a Windows buffer-size setting expecting lower latency. Going below the engine period needs WASAPI exclusive mode or `IAudioClient3`, which cpal's WASAPI host does not offer, or cpal's optional `asio` host, which kira does not enable and which needs the ASIO SDK to build and an ASIO driver to run.
 - macOS CoreAudio and other Windows devices are not yet measured; measure before changing the default.
 
