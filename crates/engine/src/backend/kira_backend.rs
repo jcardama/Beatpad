@@ -13,6 +13,9 @@ use crate::track::Track;
 
 type SharedManager = Rc<RefCell<AudioManager>>;
 
+/// Decoded audio ready to register on the audio thread.
+pub struct KiraSample(Box<StaticSoundData>);
+
 /// A single pad's voice backed by kira. Holds the decoded sample and a shared
 /// handle to the one [`AudioManager`] owned by the audio thread.
 pub struct KiraTrack {
@@ -75,19 +78,25 @@ impl KiraBackend {
 }
 
 impl Backend for KiraBackend {
-    fn register_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError> {
-        let data = StaticSoundData::from_cursor(Cursor::new(bytes))
-            .map_err(|e| BackendError::Load(e.to_string()))?;
+    type Sample = KiraSample;
+
+    fn decode(bytes: Vec<u8>) -> Result<Self::Sample, BackendError> {
+        StaticSoundData::from_cursor(Cursor::new(bytes))
+            .map(|data| KiraSample(Box::new(data)))
+            .map_err(|e| BackendError::Load(e.to_string()))
+    }
+
+    fn register_sample(&mut self, pad: PadId, sample: Self::Sample) {
+        let KiraSample(data) = sample;
         self.tracks.insert(
             pad,
             KiraTrack {
                 manager: Rc::clone(&self.manager),
-                data,
+                data: *data,
                 handle: None,
                 looping: false,
             },
         );
-        Ok(())
     }
 
     fn clear(&mut self, pad: PadId) {

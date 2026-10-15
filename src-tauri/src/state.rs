@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use crossbeam_channel::{unbounded, Sender};
-use engine::{Engine, KiraBackend, PadEvent, PadId, PlayMode};
+use engine::{Engine, KiraBackend, KiraSample, PadEvent, PadId, PlayMode};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
@@ -27,7 +27,7 @@ pub struct SampleStore(pub Mutex<BTreeMap<u16, SampleEntry>>);
 /// One pad's entry in a loaded sample pack.
 pub struct PackEntry {
     pub pad: PadId,
-    pub bytes: Vec<u8>,
+    pub sample: KiraSample,
     pub mode: PlayMode,
 }
 
@@ -36,7 +36,7 @@ pub enum AudioCmd {
     Pad(PadEvent),
     SetMode(PadId, PlayMode),
     /// Load (or replace) a single pad's sample.
-    LoadSound(PadId, Vec<u8>),
+    LoadSound(PadId, KiraSample),
     /// Replace the whole board with a sample pack.
     LoadPack(Vec<PackEntry>),
     /// Remove a single pad's sample.
@@ -58,13 +58,6 @@ struct LoopChanged {
 struct SoundChanged {
     pad: u16,
     loaded: bool,
-}
-
-/// Emitted when a sample fails to decode/load on the audio thread.
-#[derive(Clone, Serialize)]
-struct SoundLoadFailed {
-    pad: u16,
-    error: String,
 }
 
 /// Shared application state held by Tauri. Holds only the channel sender — the
@@ -102,20 +95,16 @@ impl AppState {
                         emit_loop(&app, &mut last_loop, pad, engine.is_looping(pad));
                     }
                     AudioCmd::SetMode(pad, mode) => engine.set_mode(pad, mode),
-                    AudioCmd::LoadSound(pad, bytes) => {
-                        load_one(&app, &mut engine, &mut last_loop, pad, bytes);
+                    AudioCmd::LoadSound(pad, sample) => {
+                        load_one(&app, &mut engine, &mut last_loop, pad, sample);
                     }
                     AudioCmd::LoadPack(entries) => {
-                        // An empty pack (no usable pads) leaves the board intact
-                        // rather than silently wiping it.
-                        if !entries.is_empty() {
-                            for pad in 0..PAD_COUNT {
-                                clear_one(&app, &mut engine, &mut last_loop, PadId(pad));
-                            }
-                            for entry in entries {
-                                engine.set_mode(entry.pad, entry.mode);
-                                load_one(&app, &mut engine, &mut last_loop, entry.pad, entry.bytes);
-                            }
+                        for pad in 0..PAD_COUNT {
+                            clear_one(&app, &mut engine, &mut last_loop, PadId(pad));
+                        }
+                        for entry in entries {
+                            engine.set_mode(entry.pad, entry.mode);
+                            load_one(&app, &mut engine, &mut last_loop, entry.pad, entry.sample);
                         }
                     }
                     AudioCmd::Clear(pad) => {
@@ -144,30 +133,17 @@ fn load_one(
     engine: &mut Engine<KiraBackend>,
     last_loop: &mut [bool],
     pad: PadId,
-    bytes: Vec<u8>,
+    sample: KiraSample,
 ) {
-    match engine.load_sample(pad, bytes) {
-        Ok(()) => {
-            emit_loop(app, last_loop, pad, engine.is_looping(pad));
-            let _ = app.emit(
-                "sound-changed",
-                SoundChanged {
-                    pad: pad.0,
-                    loaded: true,
-                },
-            );
-        }
-        Err(e) => {
-            log::error!("load pad {} failed: {e}", pad.0);
-            let _ = app.emit(
-                "sound-load-failed",
-                SoundLoadFailed {
-                    pad: pad.0,
-                    error: e.to_string(),
-                },
-            );
-        }
-    }
+    engine.load_sample(pad, sample);
+    emit_loop(app, last_loop, pad, engine.is_looping(pad));
+    let _ = app.emit(
+        "sound-changed",
+        SoundChanged {
+            pad: pad.0,
+            loaded: true,
+        },
+    );
 }
 
 fn clear_one(

@@ -37,10 +37,10 @@ keydown/keyup (webview)
 ## Engine seams (`crates/engine/`)
 
 - `event.rs` — `PadId`, `Phase`, `PadEvent`.
-- `backend/mod.rs` — `Backend` trait: `register_sample` / `play` / `stop` / `set_looping` / `device_label`. The engine drives pads only through this trait, never kira types directly, so kira is swappable.
+- `backend/mod.rs` — `Backend` trait: associated `Sample: Send + 'static`, manager-independent `decode(bytes)` / infallible `register_sample(pad, sample)` / `play` / `stop` / `set_looping` / `device_label`. Loading commands decode on a blocking worker before sending ready samples to the audio thread. The engine drives pads only through this trait, never kira types directly, so kira is swappable.
 - `track.rs` — `Track` trait: a pad's voice (`trigger` / `release` / `set_looping`).
 - `effect.rs` — `Effect` trait + `Gain`. The seam where hosted CLAP/VST plugins will slot in as chain nodes.
-- `backend/kira_backend.rs` — `KiraBackend` (owns the `AudioManager`) + `KiraTrack`.
+- `backend/kira_backend.rs` — `KiraBackend` (owns the `AudioManager`) + `KiraTrack`, with opaque `KiraSample` carrying decoded audio across the command channel.
 - `engine.rs` — `Engine<B: Backend>`, routes `PadEvent`s by phase.
 
 ## Frontend MVP layering (`src/`)

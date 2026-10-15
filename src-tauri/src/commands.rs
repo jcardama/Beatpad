@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use engine::{PadId, Phase, PlayMode};
+use engine::{Backend, BackendError, KiraBackend, PadId, Phase, PlayMode};
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use crate::input::pad_event;
 use crate::state::{AppState, AudioCmd, PackEntry, SampleEntry, SampleStore, PAD_COUNT};
@@ -49,23 +49,37 @@ pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
 
 /// Load (or replace) the sound on a single pad from a file on disk.
 #[tauri::command]
-pub fn load_pad_sound(
+pub async fn load_pad_sound(
     pad: u16,
     path: String,
-    state: State<AppState>,
-    samples: State<SampleStore>,
+    app: AppHandle,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
 ) -> Result<(), String> {
     if pad >= PAD_COUNT {
         return Err("pad out of range".into());
     }
-    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    let cached = SampleEntry {
-        name: file_name(&path),
-        bytes: bytes.clone(),
-    };
+    let (cached, sample) = tauri::async_runtime::spawn_blocking(move || {
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        let sample = KiraBackend::decode(bytes.clone());
+        let cached = SampleEntry {
+            name: file_name(&path),
+            bytes,
+        };
+        Ok::<_, String>((cached, sample))
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
     let mut store = samples.0.lock().unwrap();
     store.insert(pad, cached);
-    state.send(AudioCmd::LoadSound(PadId(pad), bytes));
+    match sample {
+        Ok(sample) => state.send(AudioCmd::LoadSound(PadId(pad), sample)),
+        Err(error) => {
+            drop(store);
+            emit_load_failed(&app, pad, error);
+        }
+    }
     Ok(())
 }
 
@@ -73,6 +87,7 @@ pub fn load_pad_sound(
 #[tauri::command]
 pub async fn load_beat_pack(
     path: String,
+    app: AppHandle,
     state: State<'_, AppState>,
     samples: State<'_, SampleStore>,
 ) -> Result<Vec<LoadedPad>, String> {
@@ -104,11 +119,14 @@ pub async fn load_beat_pack(
             };
             match bytes {
                 Some(bytes) => {
-                    entries.push(PackEntry {
-                        pad: PadId(mapping.pad),
-                        bytes: bytes.clone(),
-                        mode: from_format_mode(mapping.mode),
-                    });
+                    match KiraBackend::decode(bytes.clone()) {
+                        Ok(sample) => entries.push(PackEntry {
+                            pad: PadId(mapping.pad),
+                            sample,
+                            mode: from_format_mode(mapping.mode),
+                        }),
+                        Err(error) => emit_load_failed(&app, mapping.pad, error),
+                    }
                     loaded.push(LoadedPad {
                         pad: mapping.pad,
                         mode: format_mode_str(mapping.mode).to_string(),
@@ -136,10 +154,25 @@ pub async fn load_beat_pack(
             store.insert(pad, SampleEntry { name, bytes });
         }
         state.send(AudioCmd::LoadPack(entries));
-    } else {
-        state.send(AudioCmd::LoadPack(entries));
     }
     Ok(loaded)
+}
+
+#[derive(Clone, Serialize)]
+struct SoundLoadFailed {
+    pad: u16,
+    error: String,
+}
+
+fn emit_load_failed(app: &AppHandle, pad: u16, error: BackendError) {
+    log::error!("load pad {pad} failed: {error}");
+    let _ = app.emit(
+        "sound-load-failed",
+        SoundLoadFailed {
+            pad,
+            error: error.to_string(),
+        },
+    );
 }
 
 /// Stop every running loop at once (panic).

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::backend::{Backend, BackendError};
+use crate::backend::Backend;
 use crate::event::{PadEvent, PadId, Phase};
 use crate::mode::PlayMode;
 
@@ -39,11 +39,11 @@ impl<B: Backend> Engine<B> {
 
     /// Load (or replace) a pad's sample. Stops any loop on that pad first so a
     /// replaced sample never leaves an orphaned voice playing.
-    pub fn load_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError> {
+    pub fn load_sample(&mut self, pad: PadId, sample: B::Sample) {
         if self.looping.remove(&pad) {
             self.backend.stop(pad);
         }
-        self.backend.register_sample(pad, bytes)
+        self.backend.register_sample(pad, sample);
     }
 
     /// Remove a pad's sample, stopping any loop on it.
@@ -133,9 +133,12 @@ mod tests {
     }
 
     impl Backend for MockBackend {
-        fn register_sample(&mut self, _pad: PadId, _bytes: Vec<u8>) -> Result<(), BackendError> {
-            Ok(())
+        type Sample = Vec<u8>;
+
+        fn decode(bytes: Vec<u8>) -> Result<Self::Sample, BackendError> {
+            Ok(bytes)
         }
+        fn register_sample(&mut self, _pad: PadId, _sample: Self::Sample) {}
         fn clear(&mut self, pad: PadId) {
             self.calls.push(format!("clear {}", pad.0));
         }
