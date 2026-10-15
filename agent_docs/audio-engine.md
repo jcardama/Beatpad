@@ -24,6 +24,18 @@ Because the manager is built inside the thread, the spawn closure only captures 
 
 See `crates/engine/src/backend/kira_backend.rs` for the live usage; `crates/engine/examples/smoke.rs` is a runnable check.
 
+## Output latency (Windows)
+
+- The engine uses `AudioManagerSettings::default()`: cpal's default output device, its default config, and `BufferSize::Default`.
+- kira exposes `CpalBackendSettings { device, config }`; a `StreamConfig` with `BufferSize::Fixed(n)` is its only public buffer control.
+- On Windows, cpal 0.17.3 (still true in 0.18.2) always opens WASAPI shared, event-driven output via `IAudioClient::Initialize`, with periodicity 0.
+- It offers neither exclusive mode nor `IAudioClient3` low-latency shared mode; callbacks follow the OS audio-engine period regardless of the requested buffer size.
+- Measured on Windows 11 with a USB output at 48 kHz, stereo F32: `Fixed(64)`, `Fixed(128)`, `Fixed(256)`, `Fixed(480)`, `Fixed(960)`, and `Default` were all accepted without stream errors.
+- All behaved identically: 480-frame (10 ms) callbacks, with a larger first callback of 1056 frames.
+- cpal's WASAPI output timestamp sets `playback = callback + frames_in_this_callback`: `playback − callback` equals the period by construction, not an independent device-latency measurement or acoustic loopback.
+- Do not plumb a Windows buffer-size setting expecting lower latency. Going below the engine period needs WASAPI exclusive mode or `IAudioClient3`, which cpal's WASAPI host does not offer, or cpal's optional `asio` host, which kira does not enable and which needs the ASIO SDK to build and an ASIO driver to run.
+- macOS CoreAudio and other Windows devices are not yet measured; measure before changing the default.
+
 ## Looping & tempo (v1 plan)
 
 - Each `KiraTrack` already carries a `looping` flag and `set_looping`. Trigger applies `loop_region` when set.
