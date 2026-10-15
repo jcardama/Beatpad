@@ -29,19 +29,19 @@ export function usePersistBoard(): void {
         const restored = modes
           .map((mode, pad) => ({ pad, mode }))
           .filter(({ mode }) => mode);
-        if (restored.length) store.setModes(restored);
-
         const pads: SavedPad[] = [];
         for (let pad = 0; pad < PAD_COUNT; pad++) {
           const path = saved.paths[pad];
           if (path) pads.push({ pad, path, mode: modes[pad] || DEFAULT_MODE });
         }
+        let loaded: SavedPad[] = [];
         try {
-          const loaded = await restoreBoard(pads);
-          if (loaded.length) store.setPaths(loaded);
+          loaded = await restoreBoard(pads);
         } catch {
           // An unavailable backend must not prevent settings hydration.
         }
+        if (restored.length) store.setModes(restored);
+        if (loaded.length) store.setPaths(loaded);
       }
       hydrated.current = true;
     })();
