@@ -10,7 +10,7 @@ Instead, an **audio actor**:
 - `src-tauri/src/state.rs` spawns one thread that creates `KiraBackend` (and thus the `AudioManager`) *inside* the thread, then loops `rx.recv()` → `Engine::handle_event`.
 - `AppState` in Tauri state holds **only** a `crossbeam_channel::Sender<AudioCmd>` (cheap, `Send + Sync + Clone`).
 - Input commands just send normalized pad events. Sample-loading commands read and decode via `Backend::decode` on a blocking worker, then send ready audio. The audio thread only registers samples; it never decodes them. Save-cache mutations hold their own lock through the matching send, but file reads and decoding stay outside it.
-- Decode failures emit `sound-load-failed` from the loading path; mapped samples remain in the save cache even if decoding fails. Packs with mapped samples replace the board even if every decode fails; packs with no mapped samples send nothing.
+- Loading commands send each decode result, including failures, to the audio thread. Pack entries always apply their modes; sample loads stop an existing loop before handling the result. Decode failures emit `sound-load-failed` from the audio thread, and mapped samples remain in the save cache even if decoding fails. Packs with mapped samples replace the board even if every decode fails; packs with no mapped samples send nothing.
 
 Because the manager is built inside the thread, the spawn closure only captures the `Receiver` (which is `Send`), so kira's `!Send` internals never cross a thread boundary. `KiraBackend`/`KiraTrack` share the manager within that one thread via `Rc<RefCell<AudioManager>>`.
 

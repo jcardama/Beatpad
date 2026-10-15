@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use crossbeam_channel::{unbounded, Sender};
-use engine::{Engine, KiraBackend, KiraSample, PadEvent, PadId, PlayMode};
+use engine::{BackendError, Engine, KiraBackend, KiraSample, PadEvent, PadId, PlayMode};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
@@ -27,7 +27,7 @@ pub struct SampleStore(pub Mutex<BTreeMap<u16, SampleEntry>>);
 /// One pad's entry in a loaded sample pack.
 pub struct PackEntry {
     pub pad: PadId,
-    pub sample: KiraSample,
+    pub sample: Result<KiraSample, BackendError>,
     pub mode: PlayMode,
 }
 
@@ -36,7 +36,7 @@ pub enum AudioCmd {
     Pad(PadEvent),
     SetMode(PadId, PlayMode),
     /// Load (or replace) a single pad's sample.
-    LoadSound(PadId, KiraSample),
+    LoadSound(PadId, Result<KiraSample, BackendError>),
     /// Replace the whole board with a sample pack.
     LoadPack(Vec<PackEntry>),
     /// Remove a single pad's sample.
@@ -58,6 +58,13 @@ struct LoopChanged {
 struct SoundChanged {
     pad: u16,
     loaded: bool,
+}
+
+/// Emitted when a sample failed to decode in the loading worker.
+#[derive(Clone, Serialize)]
+struct SoundLoadFailed {
+    pad: u16,
+    error: String,
 }
 
 /// Shared application state held by Tauri. Holds only the channel sender — the
@@ -133,17 +140,30 @@ fn load_one(
     engine: &mut Engine<KiraBackend>,
     last_loop: &mut [bool],
     pad: PadId,
-    sample: KiraSample,
+    sample: Result<KiraSample, BackendError>,
 ) {
-    engine.load_sample(pad, sample);
-    emit_loop(app, last_loop, pad, engine.is_looping(pad));
-    let _ = app.emit(
-        "sound-changed",
-        SoundChanged {
-            pad: pad.0,
-            loaded: true,
-        },
-    );
+    match engine.load_sample(pad, sample) {
+        Ok(()) => {
+            emit_loop(app, last_loop, pad, engine.is_looping(pad));
+            let _ = app.emit(
+                "sound-changed",
+                SoundChanged {
+                    pad: pad.0,
+                    loaded: true,
+                },
+            );
+        }
+        Err(e) => {
+            log::error!("load pad {} failed: {e}", pad.0);
+            let _ = app.emit(
+                "sound-load-failed",
+                SoundLoadFailed {
+                    pad: pad.0,
+                    error: e.to_string(),
+                },
+            );
+        }
+    }
 }
 
 fn clear_one(

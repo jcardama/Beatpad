@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use engine::{Backend, BackendError, KiraBackend, PadId, Phase, PlayMode};
+use engine::{Backend, KiraBackend, PadId, Phase, PlayMode};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use tauri::State;
 
 use crate::input::pad_event;
 use crate::state::{AppState, AudioCmd, PackEntry, SampleEntry, SampleStore, PAD_COUNT};
@@ -52,7 +52,6 @@ pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
 pub async fn load_pad_sound(
     pad: u16,
     path: String,
-    app: AppHandle,
     state: State<'_, AppState>,
     samples: State<'_, SampleStore>,
 ) -> Result<(), String> {
@@ -73,13 +72,7 @@ pub async fn load_pad_sound(
 
     let mut store = samples.0.lock().unwrap();
     store.insert(pad, cached);
-    match sample {
-        Ok(sample) => state.send(AudioCmd::LoadSound(PadId(pad), sample)),
-        Err(error) => {
-            drop(store);
-            emit_load_failed(&app, pad, error);
-        }
-    }
+    state.send(AudioCmd::LoadSound(PadId(pad), sample));
     Ok(())
 }
 
@@ -87,7 +80,6 @@ pub async fn load_pad_sound(
 #[tauri::command]
 pub async fn load_beat_pack(
     path: String,
-    app: AppHandle,
     state: State<'_, AppState>,
     samples: State<'_, SampleStore>,
 ) -> Result<Vec<LoadedPad>, String> {
@@ -119,14 +111,11 @@ pub async fn load_beat_pack(
             };
             match bytes {
                 Some(bytes) => {
-                    match KiraBackend::decode(bytes.clone()) {
-                        Ok(sample) => entries.push(PackEntry {
-                            pad: PadId(mapping.pad),
-                            sample,
-                            mode: from_format_mode(mapping.mode),
-                        }),
-                        Err(error) => emit_load_failed(&app, mapping.pad, error),
-                    }
+                    entries.push(PackEntry {
+                        pad: PadId(mapping.pad),
+                        sample: KiraBackend::decode(bytes.clone()),
+                        mode: from_format_mode(mapping.mode),
+                    });
                     loaded.push(LoadedPad {
                         pad: mapping.pad,
                         mode: format_mode_str(mapping.mode).to_string(),
@@ -156,23 +145,6 @@ pub async fn load_beat_pack(
         state.send(AudioCmd::LoadPack(entries));
     }
     Ok(loaded)
-}
-
-#[derive(Clone, Serialize)]
-struct SoundLoadFailed {
-    pad: u16,
-    error: String,
-}
-
-fn emit_load_failed(app: &AppHandle, pad: u16, error: BackendError) {
-    log::error!("load pad {pad} failed: {error}");
-    let _ = app.emit(
-        "sound-load-failed",
-        SoundLoadFailed {
-            pad,
-            error: error.to_string(),
-        },
-    );
 }
 
 /// Stop every running loop at once (panic).
