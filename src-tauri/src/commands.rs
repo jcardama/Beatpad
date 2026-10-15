@@ -66,42 +66,61 @@ pub fn load_pad_sound(
 
 /// Load a `.beat` pack, replacing the board. Returns each filled pad + its mode.
 #[tauri::command]
-pub fn load_beat_pack(
+pub async fn load_beat_pack(
     path: String,
-    state: State<AppState>,
-    samples: State<SampleStore>,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
 ) -> Result<Vec<LoadedPad>, String> {
-    let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
-    let beat = format::read_beat(file).map_err(|e| e.to_string())?;
+    let (entries, loaded, cached) = tauri::async_runtime::spawn_blocking(move || {
+        let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+        let beat = format::read_beat(file).map_err(|e| e.to_string())?;
 
-    let mut entries = Vec::new();
-    let mut loaded = Vec::new();
-    let mut cached = Vec::new();
-    for mapping in &beat.manifest.pads {
-        if mapping.pad >= PAD_COUNT {
-            log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
-            continue;
-        }
-        match beat.samples.get(&mapping.sample) {
-            Some(bytes) => {
-                entries.push(PackEntry {
-                    pad: PadId(mapping.pad),
-                    bytes: bytes.clone(),
-                    mode: from_format_mode(mapping.mode),
-                });
-                loaded.push(LoadedPad {
-                    pad: mapping.pad,
-                    mode: format_mode_str(mapping.mode).to_string(),
-                });
-                cached.push((mapping.pad, mapping.sample.clone(), bytes.clone()));
+        let mut sample_bytes = beat.samples;
+        let last_use: BTreeMap<_, _> = beat
+            .manifest
+            .pads
+            .iter()
+            .enumerate()
+            .filter(|(_, mapping)| mapping.pad < PAD_COUNT)
+            .map(|(index, mapping)| (mapping.sample.as_str(), index))
+            .collect();
+        let mut entries = Vec::new();
+        let mut loaded = Vec::new();
+        let mut cached = Vec::new();
+        for (index, mapping) in beat.manifest.pads.iter().enumerate() {
+            if mapping.pad >= PAD_COUNT {
+                log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
+                continue;
             }
-            None => log::warn!(
-                "pack pad {} references missing sample '{}'; skipped",
-                mapping.pad,
-                mapping.sample
-            ),
+            let bytes = if last_use.get(mapping.sample.as_str()) == Some(&index) {
+                sample_bytes.remove(&mapping.sample)
+            } else {
+                sample_bytes.get(&mapping.sample).cloned()
+            };
+            match bytes {
+                Some(bytes) => {
+                    entries.push(PackEntry {
+                        pad: PadId(mapping.pad),
+                        bytes: bytes.clone(),
+                        mode: from_format_mode(mapping.mode),
+                    });
+                    loaded.push(LoadedPad {
+                        pad: mapping.pad,
+                        mode: format_mode_str(mapping.mode).to_string(),
+                    });
+                    cached.push((mapping.pad, mapping.sample.clone(), bytes));
+                }
+                None => log::warn!(
+                    "pack pad {} references missing sample '{}'; skipped",
+                    mapping.pad,
+                    mapping.sample
+                ),
+            }
         }
-    }
+        Ok::<_, String>((entries, loaded, cached))
+    })
+    .await
+    .map_err(|e| e.to_string())??;
 
     // The pack replaces the board, so the save cache is rebuilt to match — only
     // once we know the load is worth applying (a non-empty result).
