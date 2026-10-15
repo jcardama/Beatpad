@@ -27,10 +27,11 @@ interface TransportState {
   bank: Bank;
   setLit: (pad: PadId, on: boolean) => void;
   setLooping: (pad: PadId, on: boolean) => void;
-  setLoaded: (pad: PadId, on: boolean) => void;
+  setLoaded: (entries: { pad: PadId; loaded: boolean }[]) => void;
   setPadMode: (pad: PadId, mode: PadMode) => void;
   /** Record (or clear) a pad's individually-assigned sound path. */
   setPath: (pad: PadId, path: string | null) => void;
+  setPaths: (entries: { pad: PadId; path: string }[]) => void;
   /** Forget every per-pad sound path (e.g. clearing the board or loading a pack). */
   resetPaths: () => void;
   /** Apply one mode to every pad (the global selector). */
@@ -64,10 +65,10 @@ export const useTransportStore = create<TransportState>((set) => ({
       looping[pad] = on;
       return { looping };
     }),
-  setLoaded: (pad, on) =>
+  setLoaded: (entries) =>
     set((state) => {
       const loaded = state.loaded.slice();
-      loaded[pad] = on;
+      for (const entry of entries) loaded[entry.pad] = entry.loaded;
       return { loaded };
     }),
   setPadMode: (pad, mode) =>
@@ -80,6 +81,12 @@ export const useTransportStore = create<TransportState>((set) => ({
     set((state) => {
       const paths = state.paths.slice();
       paths[pad] = path;
+      return { paths };
+    }),
+  setPaths: (entries) =>
+    set((state) => {
+      const paths = state.paths.slice();
+      for (const { pad, path } of entries) paths[pad] = path;
       return { paths };
     }),
   resetPaths: () => set({ paths: Array<string | null>(PAD_COUNT).fill(null) }),

@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 
-use engine::{PadId, Phase, PlayMode};
+use engine::{Backend, KiraBackend, PadId, Phase, PlayMode};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::input::pad_event;
-use crate::state::{AppState, AudioCmd, PackEntry, SampleStore, PAD_COUNT};
+use crate::state::{AppState, AudioCmd, PackEntry, SampleEntry, SampleStore, PAD_COUNT};
 
 /// What a `.beat` pack filled: a pad plus the mode the pack assigned it, so the
 /// UI can reflect per-pad modes after loading.
@@ -47,72 +47,157 @@ pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
     state.send(AudioCmd::SetMode(PadId(pad), parse_mode(&mode)));
 }
 
-/// Load (or replace) the sound on a single pad from a file on disk.
 #[tauri::command]
-pub fn load_pad_sound(
+pub fn set_all_pad_modes(mode: String, state: State<AppState>) {
+    state.send(AudioCmd::SetAllModes(parse_mode(&mode)));
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct SavedPad {
     pad: u16,
     path: String,
-    state: State<AppState>,
-    samples: State<SampleStore>,
+    mode: String,
+}
+
+#[tauri::command]
+pub async fn restore_board(
+    pads: Vec<SavedPad>,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
+) -> Result<Vec<SavedPad>, String> {
+    let (entries, restored, cached) = tauri::async_runtime::spawn_blocking(move || {
+        let mut entries = Vec::new();
+        let mut restored = Vec::new();
+        let mut cached = Vec::new();
+        for saved in pads {
+            if saved.pad >= PAD_COUNT {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(&saved.path) else {
+                continue;
+            };
+            entries.push(PackEntry {
+                pad: PadId(saved.pad),
+                sample: KiraBackend::decode(bytes.clone()),
+                mode: parse_mode(&saved.mode),
+            });
+            cached.push((
+                saved.pad,
+                SampleEntry {
+                    name: file_name(&saved.path),
+                    bytes,
+                },
+            ));
+            restored.push(saved);
+        }
+        (entries, restored, cached)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut store = samples.0.lock().unwrap();
+    store.extend(cached);
+    state.send(AudioCmd::RestoreBoard(entries));
+    Ok(restored)
+}
+
+/// Load (or replace) the sound on a single pad from a file on disk.
+#[tauri::command]
+pub async fn load_pad_sound(
+    pad: u16,
+    path: String,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
 ) -> Result<(), String> {
     if pad >= PAD_COUNT {
         return Err("pad out of range".into());
     }
-    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    samples.set(pad, file_name(&path), bytes.clone());
-    state.send(AudioCmd::LoadSound(PadId(pad), bytes));
+    let (cached, sample) = tauri::async_runtime::spawn_blocking(move || {
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        let sample = KiraBackend::decode(bytes.clone());
+        let cached = SampleEntry {
+            name: file_name(&path),
+            bytes,
+        };
+        Ok::<_, String>((cached, sample))
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let mut store = samples.0.lock().unwrap();
+    store.insert(pad, cached);
+    state.send(AudioCmd::LoadSound(PadId(pad), sample));
     Ok(())
 }
 
 /// Load a `.beat` pack, replacing the board. Returns each filled pad + its mode.
 #[tauri::command]
-pub fn load_beat_pack(
+pub async fn load_beat_pack(
     path: String,
-    state: State<AppState>,
-    samples: State<SampleStore>,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
 ) -> Result<Vec<LoadedPad>, String> {
-    let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
-    let beat = format::read_beat(file).map_err(|e| e.to_string())?;
+    let (entries, loaded, cached) = tauri::async_runtime::spawn_blocking(move || {
+        let file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+        let beat = format::read_beat(file).map_err(|e| e.to_string())?;
 
-    let mut entries = Vec::new();
-    let mut loaded = Vec::new();
-    let mut cached = Vec::new();
-    for mapping in &beat.manifest.pads {
-        if mapping.pad >= PAD_COUNT {
-            log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
-            continue;
-        }
-        match beat.samples.get(&mapping.sample) {
-            Some(bytes) => {
-                entries.push(PackEntry {
-                    pad: PadId(mapping.pad),
-                    bytes: bytes.clone(),
-                    mode: from_format_mode(mapping.mode),
-                });
-                loaded.push(LoadedPad {
-                    pad: mapping.pad,
-                    mode: format_mode_str(mapping.mode).to_string(),
-                });
-                cached.push((mapping.pad, mapping.sample.clone(), bytes.clone()));
+        let mut sample_bytes = beat.samples;
+        let last_use: BTreeMap<_, _> = beat
+            .manifest
+            .pads
+            .iter()
+            .enumerate()
+            .filter(|(_, mapping)| mapping.pad < PAD_COUNT)
+            .map(|(index, mapping)| (mapping.sample.as_str(), index))
+            .collect();
+        let mut entries = Vec::new();
+        let mut loaded = Vec::new();
+        let mut cached = Vec::new();
+        for (index, mapping) in beat.manifest.pads.iter().enumerate() {
+            if mapping.pad >= PAD_COUNT {
+                log::warn!("pack pad {} is outside the grid; skipped", mapping.pad);
+                continue;
             }
-            None => log::warn!(
-                "pack pad {} references missing sample '{}'; skipped",
-                mapping.pad,
-                mapping.sample
-            ),
+            let bytes = if last_use.get(mapping.sample.as_str()) == Some(&index) {
+                sample_bytes.remove(&mapping.sample)
+            } else {
+                sample_bytes.get(&mapping.sample).cloned()
+            };
+            match bytes {
+                Some(bytes) => {
+                    entries.push(PackEntry {
+                        pad: PadId(mapping.pad),
+                        sample: KiraBackend::decode(bytes.clone()),
+                        mode: from_format_mode(mapping.mode),
+                    });
+                    loaded.push(LoadedPad {
+                        pad: mapping.pad,
+                        mode: format_mode_str(mapping.mode).to_string(),
+                    });
+                    cached.push((mapping.pad, mapping.sample.clone(), bytes));
+                }
+                None => log::warn!(
+                    "pack pad {} references missing sample '{}'; skipped",
+                    mapping.pad,
+                    mapping.sample
+                ),
+            }
         }
-    }
+        Ok::<_, String>((entries, loaded, cached))
+    })
+    .await
+    .map_err(|e| e.to_string())??;
 
     // The pack replaces the board, so the save cache is rebuilt to match — only
     // once we know the load is worth applying (a non-empty result).
     if !cached.is_empty() {
-        samples.clear();
+        let mut store = samples.0.lock().unwrap();
+        store.clear();
         for (pad, name, bytes) in cached {
-            samples.set(pad, name, bytes);
+            store.insert(pad, SampleEntry { name, bytes });
         }
+        state.send(AudioCmd::LoadPack(entries));
     }
-
-    state.send(AudioCmd::LoadPack(entries));
     Ok(loaded)
 }
 
@@ -128,8 +213,16 @@ pub fn clear_pad(pad: u16, state: State<AppState>, samples: State<SampleStore>) 
     if pad >= PAD_COUNT {
         return;
     }
-    samples.remove(pad);
+    let mut store = samples.0.lock().unwrap();
+    store.remove(&pad);
     state.send(AudioCmd::Clear(PadId(pad)));
+}
+
+#[tauri::command]
+pub fn clear_board(state: State<AppState>, samples: State<SampleStore>) {
+    let mut store = samples.0.lock().unwrap();
+    store.clear();
+    state.send(AudioCmd::ClearBoard);
 }
 
 /// Manifest fields the UI supplies when saving a board to a `.beat`.

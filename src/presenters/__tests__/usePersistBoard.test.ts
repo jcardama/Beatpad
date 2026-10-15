@@ -1,0 +1,108 @@
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+
+import { DEFAULT_MODE, PAD_COUNT } from "@/model/domain/pad";
+import { ipc } from "@/model/ipc/client";
+import { loadSetting, saveSetting } from "@/model/ipc/configStore";
+import { useTransportStore } from "@/model/store/transportStore";
+import { usePersistBoard } from "@/presenters/usePersistBoard";
+
+vi.mock("@/model/ipc/client", () => ({ ipc: { invoke: vi.fn() } }));
+vi.mock("@/model/ipc/configStore", () => ({
+  loadSetting: vi.fn(),
+  saveSetting: vi.fn().mockResolvedValue(undefined),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  useTransportStore.setState({
+    paths: Array<string | null>(PAD_COUNT).fill(null),
+    modes: Array(PAD_COUNT).fill(DEFAULT_MODE),
+  });
+});
+
+it("restores in one IPC call and records only paths returned by the backend", async () => {
+  vi.mocked(loadSetting).mockResolvedValue({
+    paths: ["/read.wav", "/missing.wav", null, "/invalid-audio.wav"],
+    modes: ["hold_loop", "toggle_loop", "toggle_loop", "one_shot"],
+  });
+  vi.mocked(ipc.invoke).mockResolvedValue([
+    { pad: 0, path: "/read.wav", mode: "hold_loop" },
+    { pad: 3, path: "/invalid-audio.wav", mode: "one_shot" },
+  ]);
+
+  const { unmount } = renderHook(() => usePersistBoard());
+  try {
+    await act(async () => {});
+
+    expect(ipc.invoke).toHaveBeenCalledTimes(1);
+    expect(ipc.invoke).toHaveBeenCalledWith("restore_board", {
+      pads: [
+        { pad: 0, path: "/read.wav", mode: "hold_loop" },
+        { pad: 1, path: "/missing.wav", mode: "toggle_loop" },
+        { pad: 3, path: "/invalid-audio.wav", mode: "one_shot" },
+      ],
+    });
+    const { paths, modes } = useTransportStore.getState();
+    expect(paths.slice(0, 4)).toEqual([
+      "/read.wav", null, null, "/invalid-audio.wav",
+    ]);
+    expect(modes.slice(0, 4)).toEqual([
+      "hold_loop", "toggle_loop", "toggle_loop", "one_shot",
+    ]);
+  } finally {
+    unmount();
+  }
+});
+
+it.each(["partial", "rejected", "empty"] as const)(
+  "does not persist a %s restore, but saves the next user change",
+  async (outcome) => {
+    vi.mocked(loadSetting).mockResolvedValue({
+      paths: ["/read.wav", "/missing.wav"],
+      modes: outcome === "empty" ? [] : ["hold_loop"],
+    });
+    if (outcome === "rejected") {
+      vi.mocked(ipc.invoke).mockRejectedValue(new Error("backend unavailable"));
+    } else {
+      vi.mocked(ipc.invoke).mockResolvedValue(outcome === "partial"
+        ? [{ pad: 0, path: "/read.wav", mode: "hold_loop" }]
+        : []);
+    }
+
+    const { unmount } = renderHook(() => usePersistBoard());
+    try {
+      await act(async () => {});
+      expect(saveSetting).not.toHaveBeenCalled();
+
+      act(() => useTransportStore.getState().setPadMode(2, "toggle_loop"));
+
+      expect(saveSetting).toHaveBeenCalledTimes(1);
+      expect(saveSetting).toHaveBeenCalledWith("board", {
+        paths: expect.any(Array),
+        modes: expect.arrayContaining(["toggle_loop"]),
+      });
+    } finally {
+      unmount();
+    }
+  },
+);
+
+it("restores saved modes even when the backend rejects board restore", async () => {
+  vi.mocked(loadSetting).mockResolvedValue({
+    paths: ["/read.wav"],
+    modes: ["hold_loop", "toggle_loop"],
+  });
+  vi.mocked(ipc.invoke).mockRejectedValue(new Error("backend unavailable"));
+
+  const { unmount } = renderHook(() => usePersistBoard());
+  try {
+    await act(async () => {});
+
+    const { modes, paths } = useTransportStore.getState();
+    expect(modes.slice(0, 2)).toEqual(["hold_loop", "toggle_loop"]);
+    expect(paths.every((path) => path === null)).toBe(true);
+  } finally {
+    unmount();
+  }
+});

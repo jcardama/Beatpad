@@ -8,15 +8,16 @@ kira's `AudioManager` owns audio-thread state and is **not** a friendly shared o
 
 Instead, an **audio actor**:
 - `src-tauri/src/state.rs` spawns one thread that creates `KiraBackend` (and thus the `AudioManager`) *inside* the thread, then loops `rx.recv()` → `Engine::handle_event`.
-- `AppState` in Tauri state holds **only** a `crossbeam_channel::Sender<PadEvent>` (cheap, `Send + Sync + Clone`).
-- Commands just `state.send(pad_event(...))`. No lock is ever held across audio work.
+- `AppState` in Tauri state holds **only** a `crossbeam_channel::Sender<AudioCmd>` (cheap, `Send + Sync + Clone`).
+- Input commands just send normalized pad events. Sample-loading commands read and decode via `Backend::decode` on a blocking worker, then send ready audio. The audio thread only registers samples; it never decodes them. Save-cache mutations hold their own lock through the matching send, but file reads and decoding stay outside it.
+- Loading commands send each decode result, including failures, to the audio thread. Pack entries always apply their modes; sample loads stop an existing loop before handling the result. Decode failures emit `sound-load-failed` from the audio thread, and mapped samples remain in the save cache even if decoding fails. Packs with mapped samples replace the board even if every decode fails; packs with no mapped samples send nothing.
 
 Because the manager is built inside the thread, the spawn closure only captures the `Receiver` (which is `Send`), so kira's `!Send` internals never cross a thread boundary. `KiraBackend`/`KiraTrack` share the manager within that one thread via `Rc<RefCell<AudioManager>>`.
 
 ## kira 0.12 API shape (as used)
 
 - `AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())` — the `DefaultBackend` annotation is required for inference. `use kira::backend::DefaultBackend;`
-- `StaticSoundData::from_cursor(Cursor::new(bytes))` — decode a sample from in-memory bytes (symphonia is on by default).
+- `StaticSoundData::from_cursor(Cursor::new(bytes))` — used inside `KiraBackend::decode` on a blocking worker (symphonia is on by default). Returns an opaque `KiraSample`; `Engine::load_sample` and `Backend::register_sample` only insert this ready audio.
 - `manager.play(sound_data)` → `StaticSoundHandle`.
 - `handle.stop(Tween::default())` — stop a playing voice.
 - Looping: `sound_data.loop_region(0.0..)` before `play`.

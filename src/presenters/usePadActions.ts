@@ -1,7 +1,8 @@
 import { useCallback, useRef } from "react";
 
-import { PAD_COUNT, type PadId, type PadMode } from "@/model/domain/pad";
+import { type PadId, type PadMode } from "@/model/domain/pad";
 import {
+  clearBoard as clearBoardSounds,
   clearPad,
   loadBeatPack,
   loadPadSound,
@@ -74,7 +75,7 @@ export function usePadActions() {
   );
 
   const clearBoard = useCallback(() => {
-    for (let pad = 0; pad < PAD_COUNT; pad++) void clearPad(pad);
+    void clearBoardSounds();
     resetModes();
     resetPaths();
     setBeatPath(null); // a cleared board is a fresh, unsaved document

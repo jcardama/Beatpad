@@ -1,4 +1,4 @@
-import type { PointerEvent } from "react";
+import { memo, type PointerEvent } from "react";
 
 import {
   ContextMenu,
@@ -27,7 +27,7 @@ interface Props {
 
 /** Presentational beat cell with a right-click menu to set its mode, change, or
  *  clear its sound. Empty pads are greyed and inert. */
-export function PadView({
+export const PadView = memo(function PadView({
   pad,
   active,
   onPress,
@@ -98,4 +98,18 @@ export function PadView({
       </ContextMenuContent>
     </ContextMenu>
   );
-}
+}, (prev, next) =>
+  prev.pad.id === next.pad.id &&
+  prev.pad.label === next.pad.label &&
+  prev.pad.bank === next.pad.bank &&
+  prev.pad.lit === next.pad.lit &&
+  prev.pad.looping === next.pad.looping &&
+  prev.pad.loaded === next.pad.loaded &&
+  prev.pad.mode === next.pad.mode &&
+  prev.active === next.active &&
+  prev.onPress === next.onPress &&
+  prev.onRelease === next.onRelease &&
+  prev.onSetMode === next.onSetMode &&
+  prev.onAssign === next.onAssign &&
+  prev.onClear === next.onClear,
+);

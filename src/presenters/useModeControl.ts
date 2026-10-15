@@ -15,7 +15,7 @@ export function useModeControl() {
   const setMode = useCallback(
     (next: PadMode) => {
       setGlobalMode(next); // optimistic
-      setAllPadModes(next);
+      void setAllPadModes(next);
     },
     [setGlobalMode],
   );

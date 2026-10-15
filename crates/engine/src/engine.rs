@@ -39,11 +39,16 @@ impl<B: Backend> Engine<B> {
 
     /// Load (or replace) a pad's sample. Stops any loop on that pad first so a
     /// replaced sample never leaves an orphaned voice playing.
-    pub fn load_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError> {
+    pub fn load_sample(
+        &mut self,
+        pad: PadId,
+        sample: Result<B::Sample, BackendError>,
+    ) -> Result<(), BackendError> {
         if self.looping.remove(&pad) {
             self.backend.stop(pad);
         }
-        self.backend.register_sample(pad, bytes)
+        self.backend.register_sample(pad, sample?);
+        Ok(())
     }
 
     /// Remove a pad's sample, stopping any loop on it.
@@ -125,7 +130,6 @@ impl<B: Backend> Engine<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::backend::BackendError;
 
     #[derive(Default)]
     struct MockBackend {
@@ -133,9 +137,12 @@ mod tests {
     }
 
     impl Backend for MockBackend {
-        fn register_sample(&mut self, _pad: PadId, _bytes: Vec<u8>) -> Result<(), BackendError> {
-            Ok(())
+        type Sample = Vec<u8>;
+
+        fn decode(bytes: Vec<u8>) -> Result<Self::Sample, BackendError> {
+            Ok(bytes)
         }
+        fn register_sample(&mut self, _pad: PadId, _sample: Self::Sample) {}
         fn clear(&mut self, pad: PadId) {
             self.calls.push(format!("clear {}", pad.0));
         }
@@ -240,6 +247,21 @@ mod tests {
         engine.set_mode(PadId(0), PlayMode::ToggleLoop);
         engine.handle_event(press(0));
         assert!(engine.is_looping(PadId(0)));
+    }
+
+    #[test]
+    fn failed_load_stops_a_running_loop() {
+        let mut engine = Engine::new(MockBackend::default());
+        engine.set_mode(PadId(0), PlayMode::ToggleLoop);
+        engine.handle_event(press(0));
+        assert!(engine.is_looping(PadId(0)));
+        engine.backend_mut().calls.clear();
+
+        let result = engine.load_sample(PadId(0), Err(BackendError::Load("bad sample".into())));
+
+        assert!(matches!(result, Err(BackendError::Load(error)) if error == "bad sample"));
+        assert!(!engine.is_looping(PadId(0)));
+        assert_eq!(engine.backend_mut().calls, ["stop 0"]);
     }
 
     #[test]

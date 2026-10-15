@@ -6,6 +6,9 @@ All notable changes to BeatPad are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Pad presses no longer stall while a pack loads, and pack loading, board restore, and pad rendering are faster.
+
 ## [0.1.0] - 2026-06-18
 
 ### Added

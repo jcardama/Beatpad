@@ -1,4 +1,4 @@
-import { PAD_COUNT, type PadId, type PadMode } from "@/model/domain/pad";
+import { type PadId, type PadMode } from "@/model/domain/pad";
 import type { Theme } from "@/model/domain/theme";
 import { ipc } from "./client";
 
@@ -13,9 +13,20 @@ export const setPadMode = (pad: PadId, mode: PadMode): Promise<void> =>
   ipc.invoke("set_pad_mode", { pad, mode });
 
 /** Apply one play mode to every pad (the global mode selector). */
-export const setAllPadModes = (mode: PadMode): void => {
-  for (let pad = 0; pad < PAD_COUNT; pad++) void setPadMode(pad, mode);
-};
+export const setAllPadModes = (mode: PadMode): Promise<void> =>
+  ipc.invoke("set_all_pad_modes", { mode });
+
+export interface SavedPad {
+  pad: PadId;
+  path: string;
+  mode: PadMode;
+}
+
+/** Restore path-backed pads without clearing the board; returns readable files. */
+export const restoreBoard = (pads: SavedPad[]): Promise<SavedPad[]> =>
+  ipc.invoke("restore_board", { pads });
+
+export const clearBoard = (): Promise<void> => ipc.invoke("clear_board");
 
 /** Load (or replace) a single pad's sound from a file on disk. */
 export const loadPadSound = (pad: PadId, path: string): Promise<void> =>
@@ -73,14 +84,14 @@ export interface LoopChanged {
 export const onLoopChanged = (handler: (e: LoopChanged) => void) =>
   ipc.listen<LoopChanged>("loop-changed", handler);
 
-/** Payload of `sound-changed`: a pad gained or lost a loaded sample. */
+/** One pad's final sample state in a `sound-changed` command batch. */
 export interface SoundChanged {
   pad: PadId;
   loaded: boolean;
 }
 
-export const onSoundChanged = (handler: (e: SoundChanged) => void) =>
-  ipc.listen<SoundChanged>("sound-changed", handler);
+export const onSoundChanged = (handler: (e: SoundChanged[]) => void) =>
+  ipc.listen<SoundChanged[]>("sound-changed", handler);
 
 /** Payload of `sound-load-failed`: a sample failed to decode on the audio thread. */
 export interface SoundLoadFailed {

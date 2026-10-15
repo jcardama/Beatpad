@@ -12,9 +12,8 @@ fn main() {
 
     let mut backend = KiraBackend::new().expect("init audio backend");
     println!("output device: {}", backend.device_label());
-    backend
-        .register_sample(PadId(0), bytes)
-        .expect("register sample");
+    let sample = KiraBackend::decode(bytes).expect("decode sample");
+    backend.register_sample(PadId(0), sample);
 
     let mut engine = Engine::new(backend);
     println!("triggering pad 0 three times (listen for three thumps)...");

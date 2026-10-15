@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { PAD_COUNT, type PadMode } from "@/model/domain/pad";
-import { loadPadSound, setPadMode } from "@/model/ipc/commands";
+import { DEFAULT_MODE, PAD_COUNT, type PadMode } from "@/model/domain/pad";
+import { restoreBoard, type SavedPad } from "@/model/ipc/commands";
 import { loadSetting, saveSetting } from "@/model/ipc/configStore";
 import { useTransportStore } from "@/model/store/transportStore";
 
@@ -19,6 +19,7 @@ export function usePersistBoard(): void {
   const paths = useTransportStore((s) => s.paths);
   const modes = useTransportStore((s) => s.modes);
   const hydrated = useRef(false);
+  const skipRestoreSave = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -29,26 +30,30 @@ export function usePersistBoard(): void {
         const restored = modes
           .map((mode, pad) => ({ pad, mode }))
           .filter(({ mode }) => mode);
-        if (restored.length) store.setModes(restored);
-
+        const pads: SavedPad[] = [];
         for (let pad = 0; pad < PAD_COUNT; pad++) {
           const path = saved.paths[pad];
-          if (!path) continue;
-          try {
-            await loadPadSound(pad, path); // emits sound-changed → marks loaded
-            store.setPath(pad, path);
-            const mode = modes[pad];
-            if (mode) await setPadMode(pad, mode);
-          } catch {
-            // File moved or deleted since last run — drop it silently.
-          }
+          if (path) pads.push({ pad, path, mode: modes[pad] || DEFAULT_MODE });
         }
+        let loaded: SavedPad[] = [];
+        try {
+          loaded = await restoreBoard(pads);
+        } catch {
+          // An unavailable backend must not prevent settings hydration.
+        }
+        if (restored.length || loaded.length) skipRestoreSave.current = true;
+        if (restored.length) store.setModes(restored);
+        if (loaded.length) store.setPaths(loaded);
       }
       hydrated.current = true;
     })();
   }, []);
 
   useEffect(() => {
+    if (skipRestoreSave.current) {
+      skipRestoreSave.current = false;
+      return;
+    }
     if (hydrated.current) void saveSetting("board", { paths, modes });
   }, [paths, modes]);
 }

@@ -23,7 +23,12 @@ impl std::error::Error for BackendError {}
 /// Abstraction over the audio backend so kira stays swappable. The engine
 /// drives pads through this trait and never touches kira types directly.
 pub trait Backend {
-    fn register_sample(&mut self, pad: PadId, bytes: Vec<u8>) -> Result<(), BackendError>;
+    type Sample: Send + 'static;
+
+    fn decode(bytes: Vec<u8>) -> Result<Self::Sample, BackendError>
+    where
+        Self: Sized;
+    fn register_sample(&mut self, pad: PadId, sample: Self::Sample);
     /// Remove a pad's sample (stopping it if playing).
     fn clear(&mut self, pad: PadId);
     /// Whether the pad currently has a sample loaded.

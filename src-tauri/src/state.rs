@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use crossbeam_channel::{unbounded, Sender};
-use engine::{Engine, KiraBackend, PadEvent, PadId, PlayMode};
+use engine::{BackendError, Engine, KiraBackend, KiraSample, PadEvent, PadId, PlayMode};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
@@ -19,28 +19,15 @@ pub struct SampleEntry {
 /// write the board back to a `.beat`. The audio thread keeps only *decoded*
 /// audio, so the raw bytes for serialization live here. Held behind a `Mutex`
 /// in Tauri state; this is NOT the audio engine (which stays on its own thread).
+/// Mutating commands hold this lock through sending their matching `AudioCmd`
+/// so the cache and audio command queue apply mutations in the same order.
 #[derive(Default)]
 pub struct SampleStore(pub Mutex<BTreeMap<u16, SampleEntry>>);
-
-impl SampleStore {
-    pub fn set(&self, pad: u16, name: String, bytes: Vec<u8>) {
-        self.0
-            .lock()
-            .unwrap()
-            .insert(pad, SampleEntry { name, bytes });
-    }
-    pub fn remove(&self, pad: u16) {
-        self.0.lock().unwrap().remove(&pad);
-    }
-    pub fn clear(&self) {
-        self.0.lock().unwrap().clear();
-    }
-}
 
 /// One pad's entry in a loaded sample pack.
 pub struct PackEntry {
     pub pad: PadId,
-    pub bytes: Vec<u8>,
+    pub sample: Result<KiraSample, BackendError>,
     pub mode: PlayMode,
 }
 
@@ -48,8 +35,11 @@ pub struct PackEntry {
 pub enum AudioCmd {
     Pad(PadEvent),
     SetMode(PadId, PlayMode),
+    SetAllModes(PlayMode),
+    RestoreBoard(Vec<PackEntry>),
+    ClearBoard,
     /// Load (or replace) a single pad's sample.
-    LoadSound(PadId, Vec<u8>),
+    LoadSound(PadId, Result<KiraSample, BackendError>),
     /// Replace the whole board with a sample pack.
     LoadPack(Vec<PackEntry>),
     /// Remove a single pad's sample.
@@ -73,7 +63,7 @@ struct SoundChanged {
     loaded: bool,
 }
 
-/// Emitted when a sample fails to decode/load on the audio thread.
+/// Emitted when a sample failed to decode in the loading worker.
 #[derive(Clone, Serialize)]
 struct SoundLoadFailed {
     pad: u16,
@@ -108,6 +98,7 @@ impl AppState {
 
             // Drains until the sender (and thus the app) is dropped.
             while let Ok(cmd) = rx.recv() {
+                let mut sound_changes = BTreeMap::new();
                 match cmd {
                     AudioCmd::Pad(event) => {
                         let pad = event.pad;
@@ -115,30 +106,74 @@ impl AppState {
                         emit_loop(&app, &mut last_loop, pad, engine.is_looping(pad));
                     }
                     AudioCmd::SetMode(pad, mode) => engine.set_mode(pad, mode),
-                    AudioCmd::LoadSound(pad, bytes) => {
-                        load_one(&app, &mut engine, &mut last_loop, pad, bytes);
-                    }
-                    AudioCmd::LoadPack(entries) => {
-                        // An empty pack (no usable pads) leaves the board intact
-                        // rather than silently wiping it.
-                        if !entries.is_empty() {
-                            for pad in 0..PAD_COUNT {
-                                clear_one(&app, &mut engine, &mut last_loop, PadId(pad));
-                            }
-                            for entry in entries {
-                                engine.set_mode(entry.pad, entry.mode);
-                                load_one(&app, &mut engine, &mut last_loop, entry.pad, entry.bytes);
-                            }
+                    AudioCmd::SetAllModes(mode) => {
+                        for pad in 0..PAD_COUNT {
+                            engine.set_mode(PadId(pad), mode);
                         }
                     }
+                    AudioCmd::RestoreBoard(entries) => {
+                        load_entries(
+                            &app,
+                            &mut engine,
+                            &mut last_loop,
+                            &mut sound_changes,
+                            entries,
+                        );
+                    }
+                    AudioCmd::ClearBoard => {
+                        for pad in 0..PAD_COUNT {
+                            clear_one(
+                                &app,
+                                &mut engine,
+                                &mut last_loop,
+                                &mut sound_changes,
+                                PadId(pad),
+                            );
+                        }
+                    }
+                    AudioCmd::LoadSound(pad, sample) => {
+                        load_one(
+                            &app,
+                            &mut engine,
+                            &mut last_loop,
+                            &mut sound_changes,
+                            pad,
+                            sample,
+                        );
+                    }
+                    AudioCmd::LoadPack(entries) => {
+                        for pad in 0..PAD_COUNT {
+                            clear_one(
+                                &app,
+                                &mut engine,
+                                &mut last_loop,
+                                &mut sound_changes,
+                                PadId(pad),
+                            );
+                        }
+                        load_entries(
+                            &app,
+                            &mut engine,
+                            &mut last_loop,
+                            &mut sound_changes,
+                            entries,
+                        );
+                    }
                     AudioCmd::Clear(pad) => {
-                        clear_one(&app, &mut engine, &mut last_loop, pad);
+                        clear_one(&app, &mut engine, &mut last_loop, &mut sound_changes, pad);
                     }
                     AudioCmd::StopAll => {
                         for pad in engine.stop_all() {
                             emit_loop(&app, &mut last_loop, pad, false);
                         }
                     }
+                }
+                if !sound_changes.is_empty() {
+                    let changes: Vec<_> = sound_changes
+                        .into_iter()
+                        .map(|(pad, loaded)| SoundChanged { pad, loaded })
+                        .collect();
+                    let _ = app.emit("sound-changed", changes);
                 }
             }
         });
@@ -152,23 +187,38 @@ impl AppState {
     }
 }
 
+fn load_entries(
+    app: &AppHandle,
+    engine: &mut Engine<KiraBackend>,
+    last_loop: &mut [bool],
+    sound_changes: &mut BTreeMap<u16, bool>,
+    entries: Vec<PackEntry>,
+) {
+    for entry in entries {
+        engine.set_mode(entry.pad, entry.mode);
+        load_one(
+            app,
+            engine,
+            last_loop,
+            sound_changes,
+            entry.pad,
+            entry.sample,
+        );
+    }
+}
+
 fn load_one(
     app: &AppHandle,
     engine: &mut Engine<KiraBackend>,
     last_loop: &mut [bool],
+    sound_changes: &mut BTreeMap<u16, bool>,
     pad: PadId,
-    bytes: Vec<u8>,
+    sample: Result<KiraSample, BackendError>,
 ) {
-    match engine.load_sample(pad, bytes) {
+    match engine.load_sample(pad, sample) {
         Ok(()) => {
             emit_loop(app, last_loop, pad, engine.is_looping(pad));
-            let _ = app.emit(
-                "sound-changed",
-                SoundChanged {
-                    pad: pad.0,
-                    loaded: true,
-                },
-            );
+            sound_changes.insert(pad.0, true);
         }
         Err(e) => {
             log::error!("load pad {} failed: {e}", pad.0);
@@ -187,6 +237,7 @@ fn clear_one(
     app: &AppHandle,
     engine: &mut Engine<KiraBackend>,
     last_loop: &mut [bool],
+    sound_changes: &mut BTreeMap<u16, bool>,
     pad: PadId,
 ) {
     if !engine.is_loaded(pad) {
@@ -194,13 +245,7 @@ fn clear_one(
     }
     engine.clear(pad);
     emit_loop(app, last_loop, pad, engine.is_looping(pad));
-    let _ = app.emit(
-        "sound-changed",
-        SoundChanged {
-            pad: pad.0,
-            loaded: false,
-        },
-    );
+    sound_changes.insert(pad.0, false);
 }
 
 fn emit_loop(app: &AppHandle, last: &mut [bool], pad: PadId, looping: bool) {
