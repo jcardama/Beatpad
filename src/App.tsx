@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 import { useBank } from "@/presenters/useBank";
 import { useBeatFile } from "@/presenters/useBeatFile";
 import { useBoardMenuSync } from "@/presenters/useBoardMenuSync";
@@ -10,6 +12,7 @@ import { useMenuEvents } from "@/presenters/useMenuEvents";
 import { useMenuToggle } from "@/presenters/useMenuToggle";
 import { useModeControl } from "@/presenters/useModeControl";
 import { usePadActions } from "@/presenters/usePadActions";
+import { usePadDrop } from "@/presenters/usePadDrop";
 import { usePadGrid } from "@/presenters/usePadGrid";
 import { usePersistBoard } from "@/presenters/usePersistBoard";
 import { usePersistSettings } from "@/presenters/usePersistSettings";
@@ -30,12 +33,15 @@ function App() {
   const { mode, setMode: setGlobalMode } = useModeControl();
   const {
     setMode: setPadMode,
+    loadSound,
     assignSound,
     clearSound,
     clearBoard,
     loadPack,
   } = usePadActions();
   const clearing = useConfirmClear(clearSound);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const dropTarget = usePadDrop(boardRef, loadSound);
   const settings = useSettings();
   const keys = useKeybindings();
   useTheme();
@@ -59,8 +65,10 @@ function App() {
         style={{ width: "min(100vw - 1.5rem, 100vh - 1.5rem)" }}
       >
         <BoardView
+          ref={boardRef}
           pads={pads}
           empty={empty}
+          dropTarget={dropTarget}
           bank={bank}
           banked={keys.keybindings.scheme === "banked"}
           mode={mode}

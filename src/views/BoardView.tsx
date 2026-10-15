@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Circle, Hand, Repeat } from "lucide-react";
 
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/model/domain/pad";
 import { Button } from "@/components/ui/button";
 import type { PadVm } from "@/presenters/padVm";
+import type { DropTarget } from "@/presenters/usePadDrop";
 import { useT } from "@/presenters/useT";
 import { BankToggle } from "./BankToggle";
 import { PadView } from "./PadView";
@@ -27,9 +28,12 @@ const MODE_ICON: Record<PadMode, typeof Circle> = {
 };
 
 interface Props {
+  ref?: Ref<HTMLDivElement>;
   pads: PadVm[];
   /** No pad has a sound: show the first-run prompt over the beat field. */
   empty: boolean;
+  /** The pad a dragged file is over. */
+  dropTarget: DropTarget | null;
   bank: Bank;
   /** Whether the banked layout is active (bank toggle + half-dimming). */
   banked: boolean;
@@ -55,8 +59,10 @@ function spacer(key: string): ReactNode {
  * also settable from its right-click menu.
  */
 export function BoardView({
+  ref,
   pads,
   empty,
+  dropTarget,
   bank,
   banked,
   mode,
@@ -87,6 +93,7 @@ export function BoardView({
             onSetMode={onSetPadMode}
             onAssign={onAssign}
             onClear={onClear}
+            dropName={dropTarget?.pad === pad.id ? dropTarget.name : null}
           />,
         );
         continue;
@@ -146,6 +153,7 @@ export function BoardView({
   return (
     <div className="relative h-full w-full">
       <div
+        ref={ref}
         className="grid h-full w-full gap-[1.5%]"
         style={{
           gridTemplateColumns: `repeat(${COLS}, 1fr)`,

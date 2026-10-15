@@ -24,6 +24,8 @@ interface Props {
   onSetMode: (pad: PadId, mode: PadMode) => void;
   onAssign: (pad: PadId) => void;
   onClear: (pad: PadId) => void;
+  /** Name of a file being dragged over this pad, if any. */
+  dropName?: string | null;
 }
 
 /** Presentational beat cell with a right-click menu to set its mode, change, or
@@ -36,6 +38,7 @@ export const PadView = memo(function PadView({
   onSetMode,
   onAssign,
   onClear,
+  dropName = null,
 }: Props) {
   const t = useT();
   const empty = !pad.loaded;
@@ -65,9 +68,16 @@ export const PadView = memo(function PadView({
             !empty &&
               pad.looping &&
               "animate-pulse outline-[1.5px] outline-offset-3 outline-ink-strong outline-solid",
+            dropName !== null &&
+              "outline-[1.5px] outline-offset-3 outline-selection-ring outline-solid",
           )}
         >
           {pad.label}
+          {dropName !== null && (
+            <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 z-20 max-w-60 -translate-x-1/2 truncate rounded-full bg-menu-surface px-2.5 py-0.5 text-text shadow-floating">
+              {dropName}
+            </span>
+          )}
         </button>
       </ContextMenuTrigger>
 
@@ -105,6 +115,7 @@ export const PadView = memo(function PadView({
   prev.pad.loaded === next.pad.loaded &&
   prev.pad.mode === next.pad.mode &&
   prev.active === next.active &&
+  prev.dropName === next.dropName &&
   prev.onPress === next.onPress &&
   prev.onRelease === next.onRelease &&
   prev.onSetMode === next.onSetMode &&
