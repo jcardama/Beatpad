@@ -7,7 +7,7 @@ All notable changes to BeatPad are documented here. The format follows
 ## [Unreleased]
 
 ### Added
-- A third **Gold** theme alongside Dark and Light, selectable from Settings → Appearance, which now presents the themes as visual swatches.
+- A third **Gold** theme alongside Dark and Light, selectable from Settings → Appearance, which now presents the themes as visual swatches, and from View → Theme.
 
 ### Changed
 - Pad presses no longer stall while a pack loads, and pack loading, board restore, and pad rendering are faster.

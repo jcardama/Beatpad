@@ -155,6 +155,7 @@ fn build_menu(app: &tauri::App) -> tauri::Result<Menu<Wry>> {
             &MenuItem::with_id(app, "theme_system", "System", true, None::<&str>)?,
             &MenuItem::with_id(app, "theme_dark", "Dark", true, None::<&str>)?,
             &MenuItem::with_id(app, "theme_light", "Light", true, None::<&str>)?,
+            &MenuItem::with_id(app, "theme_gold", "Gold", true, None::<&str>)?,
         ],
     )?;
     let view = Submenu::with_items(
@@ -246,6 +247,9 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         }
         "theme_light" => {
             let _ = app.emit("menu:theme", "light");
+        }
+        "theme_gold" => {
+            let _ = app.emit("menu:theme", "gold");
         }
         "always_on_top" => {
             // The CheckMenuItem owns the toggle state; mirror it onto the window.
