@@ -47,6 +47,60 @@ pub fn set_pad_mode(pad: u16, mode: String, state: State<AppState>) {
     state.send(AudioCmd::SetMode(PadId(pad), parse_mode(&mode)));
 }
 
+#[tauri::command]
+pub fn set_all_pad_modes(mode: String, state: State<AppState>) {
+    state.send(AudioCmd::SetAllModes(parse_mode(&mode)));
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct SavedPad {
+    pad: u16,
+    path: String,
+    mode: String,
+}
+
+#[tauri::command]
+pub async fn restore_board(
+    pads: Vec<SavedPad>,
+    state: State<'_, AppState>,
+    samples: State<'_, SampleStore>,
+) -> Result<Vec<SavedPad>, String> {
+    let (entries, restored, cached) = tauri::async_runtime::spawn_blocking(move || {
+        let mut entries = Vec::new();
+        let mut restored = Vec::new();
+        let mut cached = Vec::new();
+        for saved in pads {
+            if saved.pad >= PAD_COUNT {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(&saved.path) else {
+                continue;
+            };
+            entries.push(PackEntry {
+                pad: PadId(saved.pad),
+                sample: KiraBackend::decode(bytes.clone()),
+                mode: parse_mode(&saved.mode),
+            });
+            cached.push((
+                saved.pad,
+                SampleEntry {
+                    name: file_name(&saved.path),
+                    bytes,
+                },
+            ));
+            restored.push(saved);
+        }
+        (entries, restored, cached)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut store = samples.0.lock().unwrap();
+    store.extend(cached);
+    state.send(AudioCmd::RestoreBoard(entries));
+    Ok(restored)
+}
+
 /// Load (or replace) the sound on a single pad from a file on disk.
 #[tauri::command]
 pub async fn load_pad_sound(
@@ -162,6 +216,13 @@ pub fn clear_pad(pad: u16, state: State<AppState>, samples: State<SampleStore>) 
     let mut store = samples.0.lock().unwrap();
     store.remove(&pad);
     state.send(AudioCmd::Clear(PadId(pad)));
+}
+
+#[tauri::command]
+pub fn clear_board(state: State<AppState>, samples: State<SampleStore>) {
+    let mut store = samples.0.lock().unwrap();
+    store.clear();
+    state.send(AudioCmd::ClearBoard);
 }
 
 /// Manifest fields the UI supplies when saving a board to a `.beat`.

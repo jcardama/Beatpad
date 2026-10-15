@@ -35,6 +35,9 @@ pub struct PackEntry {
 pub enum AudioCmd {
     Pad(PadEvent),
     SetMode(PadId, PlayMode),
+    SetAllModes(PlayMode),
+    RestoreBoard(Vec<PackEntry>),
+    ClearBoard,
     /// Load (or replace) a single pad's sample.
     LoadSound(PadId, Result<KiraSample, BackendError>),
     /// Replace the whole board with a sample pack.
@@ -103,6 +106,31 @@ impl AppState {
                         emit_loop(&app, &mut last_loop, pad, engine.is_looping(pad));
                     }
                     AudioCmd::SetMode(pad, mode) => engine.set_mode(pad, mode),
+                    AudioCmd::SetAllModes(mode) => {
+                        for pad in 0..PAD_COUNT {
+                            engine.set_mode(PadId(pad), mode);
+                        }
+                    }
+                    AudioCmd::RestoreBoard(entries) => {
+                        load_entries(
+                            &app,
+                            &mut engine,
+                            &mut last_loop,
+                            &mut sound_changes,
+                            entries,
+                        );
+                    }
+                    AudioCmd::ClearBoard => {
+                        for pad in 0..PAD_COUNT {
+                            clear_one(
+                                &app,
+                                &mut engine,
+                                &mut last_loop,
+                                &mut sound_changes,
+                                PadId(pad),
+                            );
+                        }
+                    }
                     AudioCmd::LoadSound(pad, sample) => {
                         load_one(
                             &app,
@@ -123,17 +151,13 @@ impl AppState {
                                 PadId(pad),
                             );
                         }
-                        for entry in entries {
-                            engine.set_mode(entry.pad, entry.mode);
-                            load_one(
-                                &app,
-                                &mut engine,
-                                &mut last_loop,
-                                &mut sound_changes,
-                                entry.pad,
-                                entry.sample,
-                            );
-                        }
+                        load_entries(
+                            &app,
+                            &mut engine,
+                            &mut last_loop,
+                            &mut sound_changes,
+                            entries,
+                        );
                     }
                     AudioCmd::Clear(pad) => {
                         clear_one(&app, &mut engine, &mut last_loop, &mut sound_changes, pad);
@@ -160,6 +184,26 @@ impl AppState {
     pub fn send(&self, cmd: AudioCmd) {
         // A closed channel only happens during shutdown; dropping is fine.
         let _ = self.tx.send(cmd);
+    }
+}
+
+fn load_entries(
+    app: &AppHandle,
+    engine: &mut Engine<KiraBackend>,
+    last_loop: &mut [bool],
+    sound_changes: &mut BTreeMap<u16, bool>,
+    entries: Vec<PackEntry>,
+) {
+    for entry in entries {
+        engine.set_mode(entry.pad, entry.mode);
+        load_one(
+            app,
+            engine,
+            last_loop,
+            sound_changes,
+            entry.pad,
+            entry.sample,
+        );
     }
 }
 

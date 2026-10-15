@@ -31,6 +31,7 @@ interface TransportState {
   setPadMode: (pad: PadId, mode: PadMode) => void;
   /** Record (or clear) a pad's individually-assigned sound path. */
   setPath: (pad: PadId, path: string | null) => void;
+  setPaths: (entries: { pad: PadId; path: string }[]) => void;
   /** Forget every per-pad sound path (e.g. clearing the board or loading a pack). */
   resetPaths: () => void;
   /** Apply one mode to every pad (the global selector). */
@@ -80,6 +81,12 @@ export const useTransportStore = create<TransportState>((set) => ({
     set((state) => {
       const paths = state.paths.slice();
       paths[pad] = path;
+      return { paths };
+    }),
+  setPaths: (entries) =>
+    set((state) => {
+      const paths = state.paths.slice();
+      for (const { pad, path } of entries) paths[pad] = path;
       return { paths };
     }),
   resetPaths: () => set({ paths: Array<string | null>(PAD_COUNT).fill(null) }),
