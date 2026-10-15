@@ -46,5 +46,7 @@ export function usePadGrid() {
     mode: modes[id] ?? "one_shot",
   }));
 
-  return { pads, press, release };
+  const empty = pads.every((pad) => !pad.loaded);
+
+  return { pads, empty, press, release };
 }

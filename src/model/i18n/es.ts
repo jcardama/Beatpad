@@ -15,6 +15,10 @@ export const es: Messages = {
         : "Cambiar banco (mitad inferior activa)",
     modeAllPadsTitle: (mode) => `${mode} (todos los pads)`,
     modeApplyAllLabel: (mode) => `${mode} — aplicar a todos los pads`,
+    emptyTitle: "Carga tu primer sonido",
+    emptyBody:
+      "Haz clic derecho en un pad para cargar un sonido o suelta un archivo de audio encima.",
+    openPack: "Abrir pack…",
   },
   mode: {
     one_shot: "Un disparo",

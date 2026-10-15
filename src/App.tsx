@@ -25,7 +25,7 @@ import { Toaster } from "@/views/Toaster";
 
 /** Composition root: wires presenters to the board, keyboard, and engine events. */
 function App() {
-  const { pads, press, release } = usePadGrid();
+  const { pads, empty, press, release } = usePadGrid();
   const { bank, toggleBank } = useBank();
   const { mode, setMode: setGlobalMode } = useModeControl();
   const {
@@ -60,6 +60,7 @@ function App() {
       >
         <BoardView
           pads={pads}
+          empty={empty}
           bank={bank}
           banked={keys.keybindings.scheme === "banked"}
           mode={mode}
@@ -70,6 +71,7 @@ function App() {
           onSetPadMode={setPadMode}
           onAssign={assignSound}
           onClear={clearing.request}
+          onOpenPack={loadPack}
         />
       </div>
 

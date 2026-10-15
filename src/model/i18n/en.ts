@@ -16,6 +16,10 @@ export const en = {
         : "Switch bank (Bottom half active)",
     modeAllPadsTitle: (mode: string): string => `${mode} (all pads)`,
     modeApplyAllLabel: (mode: string): string => `${mode} — apply to all pads`,
+    emptyTitle: "Load your first sound",
+    emptyBody:
+      "Right-click a pad to load a sound, or drop an audio file on it.",
+    openPack: "Open pack…",
   },
   mode: {
     one_shot: "One-shot",

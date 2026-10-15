@@ -8,6 +8,7 @@ import {
   type PadId,
   type PadMode,
 } from "@/model/domain/pad";
+import { Button } from "@/components/ui/button";
 import type { PadVm } from "@/presenters/padVm";
 import { useT } from "@/presenters/useT";
 import { BankToggle } from "./BankToggle";
@@ -27,6 +28,8 @@ const MODE_ICON: Record<PadMode, typeof Circle> = {
 
 interface Props {
   pads: PadVm[];
+  /** No pad has a sound: show the first-run prompt over the beat field. */
+  empty: boolean;
   bank: Bank;
   /** Whether the banked layout is active (bank toggle + half-dimming). */
   banked: boolean;
@@ -38,6 +41,7 @@ interface Props {
   onSetPadMode: (pad: PadId, mode: PadMode) => void;
   onAssign: (pad: PadId) => void;
   onClear: (pad: PadId) => void;
+  onOpenPack: () => void;
 }
 
 function spacer(key: string): ReactNode {
@@ -52,6 +56,7 @@ function spacer(key: string): ReactNode {
  */
 export function BoardView({
   pads,
+  empty,
   bank,
   banked,
   mode,
@@ -62,6 +67,7 @@ export function BoardView({
   onSetPadMode,
   onAssign,
   onClear,
+  onOpenPack,
 }: Props) {
   const t = useT();
   const cells: ReactNode[] = [];
@@ -138,14 +144,33 @@ export function BoardView({
   }
 
   return (
-    <div
-      className="grid h-full w-full gap-[1.5%]"
-      style={{
-        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-        gridTemplateRows: `repeat(${ROWS}, 1fr)`,
-      }}
-    >
-      {cells}
+    <div className="relative h-full w-full">
+      <div
+        className="grid h-full w-full gap-[1.5%]"
+        style={{
+          gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+          gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+        }}
+      >
+        {cells}
+      </div>
+
+      {/* Over the beat field (below the top lane, left of the right lane);
+          clicks pass through to the pads except on the button. */}
+      {empty && (
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 flex items-center justify-center p-[6%]"
+          style={{ top: `${100 / ROWS}%`, right: `${100 / COLS}%` }}
+        >
+          <div className="glass edge-panel relative flex max-w-90 flex-col items-center gap-1 rounded-(--radius-panel) px-(--space-3) py-(--space-4) text-center shadow-floating">
+            <h2 className="title">{t((m) => m.board.emptyTitle)}</h2>
+            <p className="text-text-subtle">{t((m) => m.board.emptyBody)}</p>
+            <Button className="pointer-events-auto mt-(--space-2)" onClick={onOpenPack}>
+              {t((m) => m.board.openPack)}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
