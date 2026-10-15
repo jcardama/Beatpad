@@ -1,6 +1,7 @@
 import { useBank } from "@/presenters/useBank";
 import { useBeatFile } from "@/presenters/useBeatFile";
 import { useBoardMenuSync } from "@/presenters/useBoardMenuSync";
+import { useConfirmClear } from "@/presenters/useConfirmClear";
 import { useDocumentLang } from "@/presenters/useDocumentLang";
 import { useKeybindings } from "@/presenters/useKeybindings";
 import { useKeyboardInput } from "@/presenters/useKeyboardInput";
@@ -18,6 +19,7 @@ import { useSoundEvents } from "@/presenters/useSoundEvents";
 import { useTheme } from "@/presenters/useTheme";
 import { useUpdateCheck } from "@/presenters/useUpdateCheck";
 import { BoardView } from "@/views/BoardView";
+import { ClearPadDialog } from "@/views/ClearPadDialog";
 import { SettingsDialog } from "@/views/SettingsDialog";
 import { Toaster } from "@/views/Toaster";
 
@@ -26,8 +28,14 @@ function App() {
   const { pads, press, release } = usePadGrid();
   const { bank, toggleBank } = useBank();
   const { mode, setMode: setGlobalMode } = useModeControl();
-  const { setMode: setPadMode, assignSound, clearSound, clearBoard, loadPack } =
-    usePadActions();
+  const {
+    setMode: setPadMode,
+    assignSound,
+    clearSound,
+    clearBoard,
+    loadPack,
+  } = usePadActions();
+  const clearing = useConfirmClear(clearSound);
   const settings = useSettings();
   const keys = useKeybindings();
   useTheme();
@@ -61,7 +69,7 @@ function App() {
           onSetGlobalMode={setGlobalMode}
           onSetPadMode={setPadMode}
           onAssign={assignSound}
-          onClear={clearSound}
+          onClear={clearing.request}
         />
       </div>
 
@@ -81,6 +89,12 @@ function App() {
         onAssignModeKey={keys.assignModeKey}
         onAssignPanicKey={keys.assignPanicKey}
         onResetKeybindings={keys.reset}
+      />
+
+      <ClearPadDialog
+        pad={clearing.pad === null ? null : pads[clearing.pad]}
+        onConfirm={clearing.confirm}
+        onCancel={clearing.cancel}
       />
 
       <Toaster />

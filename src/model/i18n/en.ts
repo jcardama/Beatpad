@@ -26,6 +26,9 @@ export const en = {
     loadSound: "Load sound…",
     changeSound: "Change sound…",
     clearSound: "Clear sound",
+    clearTitle: "Clear this pad?",
+    clearBody: (n: number, key: string): string =>
+      `Pad ${n} (${key}) loses its sound. The audio file stays on your computer.`,
   },
   theme: {
     system: "System",
@@ -93,6 +96,7 @@ export const en = {
     dismiss: "Dismiss",
   },
   common: {
+    cancel: "Cancel",
     close: "Close",
   },
 };

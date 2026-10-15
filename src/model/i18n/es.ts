@@ -25,6 +25,9 @@ export const es: Messages = {
     loadSound: "Cargar sonido…",
     changeSound: "Cambiar sonido…",
     clearSound: "Quitar sonido",
+    clearTitle: "¿Quitar el sonido de este pad?",
+    clearBody: (n, key) =>
+      `El pad ${n} (${key}) se queda sin sonido. El archivo de audio sigue en tu ordenador.`,
   },
   theme: {
     system: "Sistema",
@@ -89,6 +92,7 @@ export const es: Messages = {
     dismiss: "Cerrar",
   },
   common: {
+    cancel: "Cancelar",
     close: "Cerrar",
   },
 };
