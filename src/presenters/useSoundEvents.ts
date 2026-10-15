@@ -12,7 +12,7 @@ export function useSoundEvents(): void {
   const setLoaded = useTransportStore((s) => s.setLoaded);
 
   useEffect(() => {
-    const unlisten = onSoundChanged(({ pad, loaded }) => setLoaded(pad, loaded));
+    const unlisten = onSoundChanged(setLoaded);
     return () => {
       void unlisten.then((off) => off());
     };

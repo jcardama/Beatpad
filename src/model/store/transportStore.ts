@@ -27,7 +27,7 @@ interface TransportState {
   bank: Bank;
   setLit: (pad: PadId, on: boolean) => void;
   setLooping: (pad: PadId, on: boolean) => void;
-  setLoaded: (pad: PadId, on: boolean) => void;
+  setLoaded: (entries: { pad: PadId; loaded: boolean }[]) => void;
   setPadMode: (pad: PadId, mode: PadMode) => void;
   /** Record (or clear) a pad's individually-assigned sound path. */
   setPath: (pad: PadId, path: string | null) => void;
@@ -64,10 +64,10 @@ export const useTransportStore = create<TransportState>((set) => ({
       looping[pad] = on;
       return { looping };
     }),
-  setLoaded: (pad, on) =>
+  setLoaded: (entries) =>
     set((state) => {
       const loaded = state.loaded.slice();
-      loaded[pad] = on;
+      for (const entry of entries) loaded[entry.pad] = entry.loaded;
       return { loaded };
     }),
   setPadMode: (pad, mode) =>

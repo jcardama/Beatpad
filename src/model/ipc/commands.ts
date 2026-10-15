@@ -73,14 +73,14 @@ export interface LoopChanged {
 export const onLoopChanged = (handler: (e: LoopChanged) => void) =>
   ipc.listen<LoopChanged>("loop-changed", handler);
 
-/** Payload of `sound-changed`: a pad gained or lost a loaded sample. */
+/** One pad's final sample state in a `sound-changed` command batch. */
 export interface SoundChanged {
   pad: PadId;
   loaded: boolean;
 }
 
-export const onSoundChanged = (handler: (e: SoundChanged) => void) =>
-  ipc.listen<SoundChanged>("sound-changed", handler);
+export const onSoundChanged = (handler: (e: SoundChanged[]) => void) =>
+  ipc.listen<SoundChanged[]>("sound-changed", handler);
 
 /** Payload of `sound-load-failed`: a sample failed to decode on the audio thread. */
 export interface SoundLoadFailed {
