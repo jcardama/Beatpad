@@ -19,23 +19,10 @@ pub struct SampleEntry {
 /// write the board back to a `.beat`. The audio thread keeps only *decoded*
 /// audio, so the raw bytes for serialization live here. Held behind a `Mutex`
 /// in Tauri state; this is NOT the audio engine (which stays on its own thread).
+/// Mutating commands hold this lock through sending their matching `AudioCmd`
+/// so the cache and audio command queue apply mutations in the same order.
 #[derive(Default)]
 pub struct SampleStore(pub Mutex<BTreeMap<u16, SampleEntry>>);
-
-impl SampleStore {
-    pub fn set(&self, pad: u16, name: String, bytes: Vec<u8>) {
-        self.0
-            .lock()
-            .unwrap()
-            .insert(pad, SampleEntry { name, bytes });
-    }
-    pub fn remove(&self, pad: u16) {
-        self.0.lock().unwrap().remove(&pad);
-    }
-    pub fn clear(&self) {
-        self.0.lock().unwrap().clear();
-    }
-}
 
 /// One pad's entry in a loaded sample pack.
 pub struct PackEntry {

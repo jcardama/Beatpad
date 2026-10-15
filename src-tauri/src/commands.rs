@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::input::pad_event;
-use crate::state::{AppState, AudioCmd, PackEntry, SampleStore, PAD_COUNT};
+use crate::state::{AppState, AudioCmd, PackEntry, SampleEntry, SampleStore, PAD_COUNT};
 
 /// What a `.beat` pack filled: a pad plus the mode the pack assigned it, so the
 /// UI can reflect per-pad modes after loading.
@@ -59,7 +59,12 @@ pub fn load_pad_sound(
         return Err("pad out of range".into());
     }
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    samples.set(pad, file_name(&path), bytes.clone());
+    let cached = SampleEntry {
+        name: file_name(&path),
+        bytes: bytes.clone(),
+    };
+    let mut store = samples.0.lock().unwrap();
+    store.insert(pad, cached);
     state.send(AudioCmd::LoadSound(PadId(pad), bytes));
     Ok(())
 }
@@ -125,13 +130,15 @@ pub async fn load_beat_pack(
     // The pack replaces the board, so the save cache is rebuilt to match — only
     // once we know the load is worth applying (a non-empty result).
     if !cached.is_empty() {
-        samples.clear();
+        let mut store = samples.0.lock().unwrap();
+        store.clear();
         for (pad, name, bytes) in cached {
-            samples.set(pad, name, bytes);
+            store.insert(pad, SampleEntry { name, bytes });
         }
+        state.send(AudioCmd::LoadPack(entries));
+    } else {
+        state.send(AudioCmd::LoadPack(entries));
     }
-
-    state.send(AudioCmd::LoadPack(entries));
     Ok(loaded)
 }
 
@@ -147,7 +154,8 @@ pub fn clear_pad(pad: u16, state: State<AppState>, samples: State<SampleStore>) 
     if pad >= PAD_COUNT {
         return;
     }
-    samples.remove(pad);
+    let mut store = samples.0.lock().unwrap();
+    store.remove(&pad);
     state.send(AudioCmd::Clear(PadId(pad)));
 }
 
