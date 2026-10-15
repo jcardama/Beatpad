@@ -1,5 +1,7 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 
+import { AUDIO_EXTENSIONS } from "@/model/domain/audio";
+
 /** Native save dialog for a `.beat` pack. Returns the chosen path, or null. */
 export async function pickSaveBeat(defaultPath?: string): Promise<string | null> {
   const result = await save({
@@ -14,7 +16,7 @@ export async function pickSoundFile(): Promise<string | null> {
   const result = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: "Audio", extensions: ["wav", "ogg", "mp3", "flac"] }],
+    filters: [{ name: "Audio", extensions: [...AUDIO_EXTENSIONS] }],
   });
   return typeof result === "string" ? result : null;
 }

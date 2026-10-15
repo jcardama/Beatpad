@@ -16,7 +16,7 @@ import { useT } from "@/presenters/useT";
 
 /**
  * Per-pad actions surfaced by the pad context menu: set a pad's play mode,
- * change or clear its sound, and load a whole `.beat` pack.
+ * load, change or clear its sound, and load a whole `.beat` pack.
  */
 export function usePadActions() {
   const storeSetMode = useTransportStore((s) => s.setPadMode);
@@ -48,22 +48,29 @@ export function usePadActions() {
     [storeSetMode],
   );
 
+  /** Load a file onto a pad; the picker and file drops both land here. */
+  const loadSound = useCallback(
+    async (pad: PadId, path: string) => {
+      try {
+        await loadPadSound(pad, path);
+        setPath(pad, path);
+      } catch (e) {
+        toast({
+          variant: "error",
+          message: t((m) => m.dialog.loadSoundError(String(e))),
+        });
+      }
+    },
+    [setPath, toast, t],
+  );
+
   const assignSound = useCallback(
     (pad: PadId) =>
       withDialog(async () => {
         const path = await pickSoundFile();
-        if (!path) return;
-        try {
-          await loadPadSound(pad, path);
-          setPath(pad, path);
-        } catch (e) {
-          toast({
-            variant: "error",
-            message: t((m) => m.dialog.loadSoundError(String(e))),
-          });
-        }
+        if (path) await loadSound(pad, path);
       }),
-    [withDialog, setPath, toast, t],
+    [withDialog, loadSound],
   );
 
   const clearSound = useCallback(
@@ -106,5 +113,5 @@ export function usePadActions() {
     [withDialog, resetModes, resetPaths, setModes, setBeatPath, toast, t],
   );
 
-  return { setMode, assignSound, clearSound, clearBoard, loadPack };
+  return { setMode, loadSound, assignSound, clearSound, clearBoard, loadPack };
 }
